@@ -1,0 +1,13 @@
+# https://aws.amazon.com/s3/pricing/
+# US East (Ohio)
+#
+# data_transferred_TB_lower_bound
+# data_transferred_TB_upper_bound
+# $/GB
+     0              0.0009765625 0
+     0.0009765625  10            0.09
+    10             50            0.085
+    50            150            0.07
+#150      - 0.05
+150 100000 0.05
+100000 200000 0

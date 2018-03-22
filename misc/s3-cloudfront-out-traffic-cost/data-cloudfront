@@ -1,0 +1,16 @@
+# https://aws.amazon.com/cloudfront/pricing/
+# In US
+#
+# data_transferred_TB_lower_bound
+# data_transferred_TB_upper_bound
+# $/GB
+   0   10  0.085
+  10   50  0.080
+  50  150  0.060
+ 150  500  0.040
+ 500 1024  0.030
+1024 5120  0.025
+# 5120    -  0.020
+# These two lines were added for plotting.
+5120 100000 0.020
+100000 200000 0
