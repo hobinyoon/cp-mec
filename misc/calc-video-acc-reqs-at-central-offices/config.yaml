@@ -1,0 +1,52 @@
+central_office_locations: ~/work/cp-mec-data/network/central-office-locations
+
+youtube_accesses: ~/work/cp-mec-data/youtube-accesses/180316-172717-tweets-1517010
+
+
+# edge_dc:
+#   locations: ~/work/castnet-data/aws-edge-locations.yaml
+#   # With 10, 57.93
+#   max_cache_size: 10
+# 
+# # Hit ratio of Facebook edge caches
+# # - Huang et al. - 2013 - An analysis of Facebook photo caching
+# #cache_hit_ratio: 0.58
+# 
+# micro_edge_dc:
+#   # These are randomly deployed in the selected cell tower locations. They
+#   # might be aggregation points.
+#   num_deployed: 1000
+# 
+# cell_tower:
+#   locations: ~/work/castnet-data/fcc-tower-locations
+# 
+# wired_network_rtt_ms_per_km: 0.018038
+# 
+# # OpenSignal network latencies in the USA. 3G and 4G.
+# #   https://opensignal.com/reports/2016/08/usa/state-of-the-mobile-network/
+# #
+# #   For a round-trip delay, it should be doubled I think.
+# #
+# #   Questions:
+# #     What is the 3G:4G ratio?
+# #     What do those error bars mean? 25% and 75% percentile?
+# #     What exactly did they measure? Time to first byte? How big were the requests?
+# mobile_newtwork_speed:
+#   3G:
+#     ratio: 0.5
+#     # In milliseconds
+#     carrier_latency:
+#       "AT&T":     124.55
+#       "Sprint":   149.95
+#       "T-Mobile":  98.91
+#       "Verizon":  177.36
+#   4G:
+#     ratio: 0.5
+#     carrier_latency:
+#       "AT&T":      64.71
+#       "Sprint":    57.06
+#       "T-Mobile":  61.55
+#       "Verizon":   60.47
+# 
+# # USA map to test if a point is contained in the USA
+# usa_map: ~/work/castnet/misc/us-states-map/usa.txt

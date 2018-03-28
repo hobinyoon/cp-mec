@@ -1,0 +1,8 @@
+AWS Ping Latency Check: http://cloudping.mobilfactory.co.kr/
+  pings all 11 regions. Cool!
+
+long should be good enough for latencies in us (microseconds)
+  calc "2^63 / 1000 / 1000 / 60 / 60 / 24 / 365.25"
+	  ~292271.02 years
+  calc "2^31 / 1000 / 1000 / 60"
+	  ~35.79 mins
