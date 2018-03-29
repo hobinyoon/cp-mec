@@ -17,8 +17,6 @@ using namespace std;
 
 namespace Conf {
   YAML::Node _yaml_root;
-  // TODO: need this?
-  //string _exp_id;
 
   string _dn_out;
 

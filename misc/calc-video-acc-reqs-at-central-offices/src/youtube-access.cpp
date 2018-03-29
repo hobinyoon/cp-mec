@@ -218,7 +218,7 @@ namespace YoutubeAccess {
       }
     }
 
-    // TODO: compare the result with the serial one.
+    // Compare the result with the serial one. Well. I think the result is correct.
   }
 
   void MapAccessToCentraloffice() {

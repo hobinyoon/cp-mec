@@ -23,9 +23,6 @@ int main(int argc, char* argv[]) {
 
     Conf::Init(argc, argv);
 
-    // TODO: Read the workload and map each video access request to a closest central office
-    // I don't think it takes too long. The computation can be done in parallel.
-
     CentralOffices::Load();
 
     YoutubeAccess::Load();

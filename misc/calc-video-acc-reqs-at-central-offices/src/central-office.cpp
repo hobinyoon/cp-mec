@@ -33,30 +33,6 @@ ostream& operator<< (ostream& os, const CentralOffice& c) {
 }
 
 
-// TODO: clean up
-//const Op* CentralOffice::ReadObj(const Op* op_read, double& latency) {
-//  const Op* op = _cache.Get(op_read);
-//  if (op != NULL)
-//    return op;
-//
-//  // When cache miss, contact the nearest edge data center.
-//  //
-//  // Note: This always returns the same result (thus the read paths form a
-//  // tree) and can be cached.
-//  //
-//  // Idea: You could do cooperative caching by querying near edge data centers.
-//  // The location can be globally maintained with a DHT or if the object is big
-//  // enough, the location metadata could be worth keeping in a global database.
-//  // There are many cooperative caching techniques too.
-//
-//  EdgeDc* e_dc = EdgeDCs::GetNearest(lat, lon);
-//  latency += Latency::Wired(lat, lon, e_dc->lat, e_dc->lon);
-//  const Op* op1 = e_dc->ReadObj(op_read, latency);
-//  _cache.Put(op1, op_read->created_at);
-//  return op1;
-//}
-
-
 Coord::Coord(const double lat_, const double lon_)
   : lat(lat_), lon(lon_)
 {
