@@ -2,17 +2,32 @@
 
 #include <string>
 
+
+struct Coord {
+  double lat;
+  double lon;
+
+  // 3D Cartesian coordinate on a sphere with a diameter 1
+  double x;
+  double y;
+  double z;
+
+  Coord(const double lat_, const double lon_);
+};
+
+
 struct CentralOffice {
-	double lat;
-	double lon;
+  int id;
+  Coord c;
 
-	CentralOffice(double lat, double lon);
+  CentralOffice(int id, const Coord& c);
 
-	std::string to_string();
+  std::string to_string();
 };
 
 
 namespace CentralOffices {
-	void Init();
-	CentralOffice* GetNearest(double lat, double lon);
+  void Init();
+  CentralOffice* GetNearest(double lat, double lon);
+  void FreeMem();
 };

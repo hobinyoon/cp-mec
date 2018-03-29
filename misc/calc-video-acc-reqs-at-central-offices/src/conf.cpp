@@ -16,107 +16,107 @@
 using namespace std;
 
 namespace Conf {
-	YAML::Node _yaml_root;
+  YAML::Node _yaml_root;
   // TODO: need this?
-	//string _exp_id;
+  //string _exp_id;
 
-	void _LoadYaml() {
-		string fn = str(boost::format("%s/../config.yaml") % boost::filesystem::path(__FILE__).parent_path().string());
-		_yaml_root = YAML::LoadFile("config.yaml");
-	}
+  void _LoadYaml() {
+    string fn = str(boost::format("%s/../config.yaml") % boost::filesystem::path(__FILE__).parent_path().string());
+    _yaml_root = YAML::LoadFile("config.yaml");
+  }
 
-	namespace po = boost::program_options;
+  namespace po = boost::program_options;
 
-	template<class T>
-	void __EditYaml(const string& key, po::variables_map& vm) {
-		if (vm.count(key) != 1)
-			return;
-		T v = vm[key].as<T>();
-		static const auto sep = boost::is_any_of(".");
-		vector<string> tokens;
-		boost::split(tokens, key, sep, boost::token_compress_on);
-		// Had to use a pointer to traverse the tree. Otherwise, the tree gets
-		// messed up.
-		YAML::Node* n = &_yaml_root;
-		for (string t: tokens) {
-			YAML::Node n1 = (*n)[t];
-			n = &n1;
-		}
-		*n = v;
-		//Cons::P(Desc());
-	}
+  template<class T>
+  void __EditYaml(const string& key, po::variables_map& vm) {
+    if (vm.count(key) != 1)
+      return;
+    T v = vm[key].as<T>();
+    static const auto sep = boost::is_any_of(".");
+    vector<string> tokens;
+    boost::split(tokens, key, sep, boost::token_compress_on);
+    // Had to use a pointer to traverse the tree. Otherwise, the tree gets
+    // messed up.
+    YAML::Node* n = &_yaml_root;
+    for (string t: tokens) {
+      YAML::Node n1 = (*n)[t];
+      n = &n1;
+    }
+    *n = v;
+    //Cons::P(Desc());
+  }
 
-	void _ParseArgs(int argc, char* argv[]) {
-		po::options_description od("Allowed options");
-		od.add_options()
-			("youtube_accesses",
-			 po::value<string>()->default_value(GetStr("youtube_accesses")))
-			("help", "show help message")
-			;
+  void _ParseArgs(int argc, char* argv[]) {
+    po::options_description od("Allowed options");
+    od.add_options()
+      ("youtube_accesses",
+       po::value<string>()->default_value(GetStr("youtube_accesses")))
+      ("help", "show help message")
+      ;
 
-		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).options(od).run(), vm);
-		po::notify(vm);
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv).options(od).run(), vm);
+    po::notify(vm);
 
-		if (vm.count("help") > 0) {
-			// well... this doesn't show boolean as string.
-			cout << std::boolalpha;
-			cout << od << "\n";
-			exit(0);
-		}
+    if (vm.count("help") > 0) {
+      // well... this doesn't show boolean as string.
+      cout << std::boolalpha;
+      cout << od << "\n";
+      exit(0);
+    }
 
-		//__EditYaml<size_t>("micro_edge_dc.num_deployed", vm);
-		__EditYaml<string>("youtube_accesses", vm);
-	}
+    //__EditYaml<size_t>("micro_edge_dc.num_deployed", vm);
+    __EditYaml<string>("youtube_accesses", vm);
+  }
 
-	void Init(int argc, char* argv[]) {
-		//_exp_id = Util::CurDateTime();
-		_LoadYaml();
-		_ParseArgs(argc, argv);
-		//Cons::P(boost::format("Exp ID: %s") % _exp_id);
-	}
+  void Init(int argc, char* argv[]) {
+    //_exp_id = Util::CurDateTime();
+    _LoadYaml();
+    _ParseArgs(argc, argv);
+    //Cons::P(boost::format("Exp ID: %s") % _exp_id);
+  }
 
-	YAML::Node Get(const std::string& k) {
-		return _yaml_root[k];
-	}
+  YAML::Node Get(const std::string& k) {
+    return _yaml_root[k];
+  }
 
-	string GetStr(const std::string& k) {
-		return _yaml_root[k].as<string>();
-	}
+  string GetStr(const std::string& k) {
+    return _yaml_root[k].as<string>();
+  }
 
-	string GetFn(const std::string& k) {
-		// Use boost::regex. C++11 regex works from 4.9. Ubuntu 14.04 has g++ 4.8.4.
-		//   http://stackoverflow.com/questions/8060025/is-this-c11-regex-error-me-or-the-compiler
+  string GetFn(const std::string& k) {
+    // Use boost::regex. C++11 regex works from 4.9. Ubuntu 14.04 has g++ 4.8.4.
+    //   http://stackoverflow.com/questions/8060025/is-this-c11-regex-error-me-or-the-compiler
     return boost::regex_replace(
         GetStr(k)
         , boost::regex("~")
         , Util::HomeDir());
-	}
+  }
 
-	const string Desc() {
-		YAML::Emitter emitter;
-		emitter << _yaml_root;
-		if (! emitter.good())
-			THROW("Unexpected");
-		return emitter.c_str();
-	}
+  const string Desc() {
+    YAML::Emitter emitter;
+    emitter << _yaml_root;
+    if (! emitter.good())
+      THROW("Unexpected");
+    return emitter.c_str();
+  }
 
   // TODO: needed?
-	// const string OutputDir() {
-	// 	return str(boost::format("%s/%s")
-	// 			% boost::regex_replace(
-	// 				GetStr("simulation_result_dir")
-	// 				, boost::regex("~")
-	// 				, Util::HomeDir())
-	// 			% _exp_id);
-	// }
+  // const string OutputDir() {
+  //   return str(boost::format("%s/%s")
+  //       % boost::regex_replace(
+  //         GetStr("simulation_result_dir")
+  //         , boost::regex("~")
+  //         , Util::HomeDir())
+  //       % _exp_id);
+  // }
 
-	// void StoreConf() {
-	// 	boost::filesystem::create_directories(OutputDir());
-	// 	const string fn = str(boost::format("%s/conf") % Conf::OutputDir());
-	// 	ofstream ofs(fn);
-	// 	if (! ofs.is_open())
-	// 		THROW(boost::format("Unable to open file %s") % fn);
-	// 	ofs << Desc() << "\n";
-	// }
+  // void StoreConf() {
+  //   boost::filesystem::create_directories(OutputDir());
+  //   const string fn = str(boost::format("%s/conf") % Conf::OutputDir());
+  //   ofstream ofs(fn);
+  //   if (! ofs.is_open())
+  //     THROW(boost::format("Unable to open file %s") % fn);
+  //   ofs << Desc() << "\n";
+  // }
 };

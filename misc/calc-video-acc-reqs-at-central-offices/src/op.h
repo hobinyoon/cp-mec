@@ -4,26 +4,26 @@
 #include <string>
 
 struct Op {
-	enum Type {
-		NA = 0,	// not assigned
-		W = 1,
-		R = 2,
-	};
+  enum Type {
+    NA = 0,  // not assigned
+    W = 1,
+    R = 2,
+  };
 
-	Type type;
-	double lat;
-	double lon;
-	std::string obj_id;
+  Type type;
+  double lat;
+  double lon;
+  std::string obj_id;
 
-	// The request time of the operation: write time or read time.
-	//boost::posix_time::ptime created_at;
-	std::string created_at;
+  // The request time of the operation: write time or read time.
+  //boost::posix_time::ptime created_at;
+  std::string created_at;
 
-	char in_usa;
+  char in_usa;
 
-	virtual ~Op();
+  virtual ~Op();
 
-	virtual std::string to_string() const = 0;
+  virtual std::string to_string() const = 0;
 };
 
 

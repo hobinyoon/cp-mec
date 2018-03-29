@@ -5,13 +5,13 @@
 #include <yaml-cpp/yaml.h>
 
 namespace Conf {
-	void Init(int argc, char* argv[]);
+  void Init(int argc, char* argv[]);
 
-	YAML::Node Get(const std::string& k);
-	std::string GetStr(const std::string& k);
-	std::string GetFn(const std::string& k);
+  YAML::Node Get(const std::string& k);
+  std::string GetStr(const std::string& k);
+  std::string GetFn(const std::string& k);
 
-	const std::string Desc();
+  const std::string Desc();
 
-	void StoreConf();
+  void StoreConf();
 };
