@@ -16,4 +16,5 @@ popd > /dev/null
 
 printf "\n"
 printf "Running calc-req-at-co ...\n"
+#time valgrind target/calc-req-at-co "$@"
 time target/calc-req-at-co "$@"

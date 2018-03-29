@@ -13,5 +13,6 @@ namespace Conf {
 
   const std::string Desc();
 
-  void StoreConf();
+  const std::string DnOut();
+  //void StoreConf();
 };

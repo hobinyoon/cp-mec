@@ -25,9 +25,11 @@ struct CentralOffice {
   std::string to_string();
 };
 
+std::ostream& operator<< (std::ostream& os, const CentralOffice& c);
+
 
 namespace CentralOffices {
-  void Init();
+  void Load();
   CentralOffice* GetNearest(double lat, double lon);
   void FreeMem();
 };

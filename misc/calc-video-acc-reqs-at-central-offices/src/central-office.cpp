@@ -80,7 +80,7 @@ namespace CentralOffices {
   // Point index
   bgi::rtree<P3_id, bgi::quadratic<16> > _rtree;
 
-  void Init() {
+  void Load() {
     string fn = Conf::GetFn("central_office_locations");
     Cons::MT _(boost::format("Loading central office locations from %s ...") % fn);
 

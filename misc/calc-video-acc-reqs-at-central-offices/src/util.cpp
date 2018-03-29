@@ -142,6 +142,12 @@ namespace Util {
     ifs.read((char*)&str[0], s);
   }
 
+	void WriteStr(std::ofstream& ofs, const std::string& str) {
+		size_t s = str.size();
+		ofs.write((char*)&s, sizeof(s));
+		ofs.write((char*)&str[0], s);
+	}
+
   const string& SrcDir() {
     static string srcdir;
     if (srcdir.size() == 0) {
@@ -419,8 +425,10 @@ _Error::_Error(boost::format& f, const char* file_name_, const int line_no_)
 void _Error::_Init() {
   // Stack trace skips the innermost 3 functions, StackTrace(), _Init(), and
   // _Error().
-  _what = str(boost::format("%s\n%s")
+  _what = str(boost::format("%s: %s %d\n%s")
       % runtime_error::what()
+      % file_name
+      % line_no
       % Util::Indent(Util::StackTrace(3), 2));
 }
 

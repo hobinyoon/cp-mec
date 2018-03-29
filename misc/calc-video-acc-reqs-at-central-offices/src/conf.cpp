@@ -20,6 +20,8 @@ namespace Conf {
   // TODO: need this?
   //string _exp_id;
 
+  string _dn_out;
+
   void _LoadYaml() {
     string fn = str(boost::format("%s/../config.yaml") % boost::filesystem::path(__FILE__).parent_path().string());
     _yaml_root = YAML::LoadFile("config.yaml");
@@ -74,6 +76,9 @@ namespace Conf {
     _LoadYaml();
     _ParseArgs(argc, argv);
     //Cons::P(boost::format("Exp ID: %s") % _exp_id);
+
+    _dn_out = str(boost::format("%s/../.output") % boost::filesystem::path(__FILE__).parent_path().string());
+    boost::filesystem::create_directories(_dn_out);
   }
 
   YAML::Node Get(const std::string& k) {
@@ -101,15 +106,9 @@ namespace Conf {
     return emitter.c_str();
   }
 
-  // TODO: needed?
-  // const string OutputDir() {
-  //   return str(boost::format("%s/%s")
-  //       % boost::regex_replace(
-  //         GetStr("simulation_result_dir")
-  //         , boost::regex("~")
-  //         , Util::HomeDir())
-  //       % _exp_id);
-  // }
+  const string DnOut() {
+    return _dn_out;
+  }
 
   // void StoreConf() {
   //   boost::filesystem::create_directories(OutputDir());

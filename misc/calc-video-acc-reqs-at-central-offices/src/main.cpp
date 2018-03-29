@@ -3,10 +3,8 @@
 #include <iostream>
 #include "conf.h"
 #include "cons.h"
-//#include "latency.h"
 #include "central-office.h"
 #include "util.h"
-//#include "workload-player.h"
 #include "youtube-access.h"
 
 using namespace std;
@@ -28,13 +26,17 @@ int main(int argc, char* argv[]) {
     // TODO: Read the workload and map each video access request to a closest central office
     // I don't think it takes too long. The computation can be done in parallel.
 
-    CentralOffices::Init();
+    CentralOffices::Load();
 
-    //YoutubeAccess::Load();
-    //WorkloadPlayer::MapAccessToCentraloffice();
-    //YoutubeAccess::FreeMem();
+    YoutubeAccess::Load();
 
-    CentralOffices::FreeMem();
+    YoutubeAccess::MapAccessToCentraloffice();
+
+    {
+      Cons::MT _("Freeing memory ...");
+      YoutubeAccess::FreeMem();
+      CentralOffices::FreeMem();
+    }
   } catch (const exception& e) {
     cerr << "Got an exception: " << e.what() << "\n";
     return 1;

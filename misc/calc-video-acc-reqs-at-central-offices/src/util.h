@@ -25,6 +25,7 @@ namespace Util {
   void SetEnv(const char* k, const std::string& v);
 
   void ReadStr(std::ifstream& ifs, std::string& str);
+	void WriteStr(std::ofstream& ofs, const std::string& str);
 
   const std::string& SrcDir();
 
