@@ -25,13 +25,13 @@ namespace YoutubeAccess {
 
   void _LoadOps() {
     string fn = Conf::GetFn("youtube_accesses");
-    string dn = boost::filesystem::path(fn).parent_path().string();
-    string fn1 = boost::filesystem::path(fn).filename().string();
 
-    // Unzip if a zipped file exist
+    // Unzip if needed
     if (! boost::filesystem::exists(fn)) {
       string fn_7z = fn + ".7z";
       if (boost::filesystem::exists(fn_7z)) {
+        string dn = boost::filesystem::path(fn).parent_path().string();
+        string fn1 = boost::filesystem::path(fn).filename().string();
         string cmd = str(boost::format("cd %s && 7z e %s.7z") % dn % fn1);
         Util::RunSubprocess(cmd);
       } else
@@ -235,6 +235,7 @@ namespace YoutubeAccess {
         ofstream ofs(fn);
         for (auto i: _co_accesses) {
           ofs << boost::format("%s %d\n") % *i.first % i.second.size();
+
           // TODO: write YouTube access requests too
         }
       }

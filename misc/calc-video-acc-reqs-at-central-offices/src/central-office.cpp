@@ -84,7 +84,17 @@ namespace CentralOffices {
     string fn = Conf::GetFn("central_office_locations");
     Cons::MT _(boost::format("Loading central office locations from %s ...") % fn);
 
-    // TODO: When the file doesn't exist, unzip from .7z.
+    // Unzip if needed
+    if (! boost::filesystem::exists(fn)) {
+      string fn_7z = fn + ".7z";
+      if (boost::filesystem::exists(fn_7z)) {
+        string dn = boost::filesystem::path(fn).parent_path().string();
+        string fn1 = boost::filesystem::path(fn).filename().string();
+        string cmd = str(boost::format("cd %s && 7z e %s.7z") % dn % fn1);
+        Util::RunSubprocess(cmd);
+      } else
+        THROW("Unexpected");
+    }
 
     struct P2 {
       double x;
