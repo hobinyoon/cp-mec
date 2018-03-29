@@ -82,7 +82,6 @@ namespace YoutubeAccess {
   void Load() {
     _LoadOps();
 
-    // TODO: use this to filter out COs outside of the contiguous USA
     //_GenFileForCoordPlot();
   }
 
@@ -230,15 +229,18 @@ namespace YoutubeAccess {
     }
     {
       Cons::MT _("Generating output file ...");
-      string fn = str(boost::format("%s/co-accesses") % Conf::DnOut());
-      {
-        ofstream ofs(fn);
-        for (auto i: _co_accesses) {
-          ofs << boost::format("%s %d\n") % *i.first % i.second.size();
+      string fn = str(boost::format("%s/centraloffice-videoaccesses") % Conf::DnOut());
+      ofstream ofs(fn);
+      ofs << "# central_office_id latitude longitude num_video_accesses\n";
+      ofs << "#   tweet_id user_id created_at latitude longitude youtube_video_id\n";
+      ofs << "\n";
+      for (auto i: _co_accesses) {
+        ofs << boost::format("%s %d\n") % *i.first % i.second.size();
 
-          // TODO: write YouTube access requests too
-        }
+        for (auto t: i.second)
+          ofs << boost::format("  %s\n") % *t;
       }
+      ofs.close();
       Cons::P(boost::format("created %s %d") % fn % boost::filesystem::file_size(fn));
     }
   }
