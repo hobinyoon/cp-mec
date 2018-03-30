@@ -198,7 +198,7 @@ namespace YoutubeAccess {
 
     {
       Cons::MT _("Sorting vector<Tweet*> by their timestamps ...");
-      for (auto i: _co_accesses) {
+      for (auto& i: _co_accesses) {
         vector<const Tweet*>& tweets = i.second;
         //for (auto t: tweets) {
         //  Cons::P(boost::format("%s") % *t);
