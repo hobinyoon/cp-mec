@@ -17,8 +17,6 @@ using namespace std;
 
 
 namespace CentralOffices {
-  const double DIST_THRESHOLD = 0.1;
-
   namespace bg = boost::geometry;
   namespace bgi = boost::geometry::index;
   // For hiding points, use 2D distance since the points will be plotted in a 2D map.
@@ -45,10 +43,12 @@ namespace CentralOffices {
 
     Cons::MT _(boost::format("Loading central office locations from %s ...") % fn);
 
+    const double dist_sq_threshold = atof(Conf::GetStr("dist_sq_threshold").c_str());
     vector<LatLon> sparse_points;
 
     ifstream ifs(fn);
     int co_id = 0;
+    int num_COs_filtered_out = 0;
     for (string line; getline(ifs, line); ) {
       if (line.size() == 0)
         continue;
@@ -65,9 +65,12 @@ namespace CentralOffices {
       double lon = stod(t[1]);
 
       double d = GetDistToNearest(lat, lon);
-      if (d == -1.0 || DIST_THRESHOLD < d) {
+
+      if (d == -1.0 || dist_sq_threshold < d) {
         _rtree.insert(std::make_pair(P2(lon, lat), co_id));
         sparse_points.push_back(LatLon(lat, lon));
+      } else {
+        num_COs_filtered_out ++;
       }
       co_id ++;
     }
@@ -75,9 +78,9 @@ namespace CentralOffices {
     // Print out the sparse points
     //   Couldn't figure out how to print out the points in _rtree. Tried all of these:
     //     https://stackoverflow.com/questions/27037129/how-to-iterate-over-a-boost-r-tree
-    Cons::P(boost::format("%d points after dropping almost duplicate points") % sparse_points.size());
+    Cons::P(boost::format("%d points after dropping %d almost duplicate points") % sparse_points.size() % num_COs_filtered_out);
 
-    string fn_out = str(boost::format("%s/centraloffices_without_almost_dup_points") % Conf::DnOut());
+    string fn_out = str(boost::format("%s/centraloffices-wo-almost-dup-points-%f") % Conf::DnOut() % dist_sq_threshold);
     ofstream ofs(fn_out);
     for (auto i: sparse_points) {
       ofs << i.lat << " " << i.lon << "\n";

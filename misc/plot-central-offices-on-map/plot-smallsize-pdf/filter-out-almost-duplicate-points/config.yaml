@@ -1,0 +1,3 @@
+central_office_locations: ../../data-co-locations
+
+dist_sq_threshold: 0.1
