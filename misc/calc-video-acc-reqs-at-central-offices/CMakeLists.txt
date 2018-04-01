@@ -14,15 +14,16 @@ TARGET_COMPILE_OPTIONS(${EXE_NAME} PUBLIC -Wall -Werror -std=gnu++11)
 SET_PROPERTY(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD 11)
 
 FIND_PACKAGE(Boost COMPONENTS
-	date_time
-	filesystem
-	program_options
-	regex
-	system
-	timer
-	REQUIRED)
+  date_time
+  filesystem
+  program_options
+  regex
+  system
+  timer
+  REQUIRED)
 
 TARGET_LINK_LIBRARIES(${EXE_NAME} PUBLIC
-	${Boost_LIBRARIES}
-	yaml-cpp
-	)
+  ${Boost_LIBRARIES}
+  yaml-cpp
+  pthread
+  )
