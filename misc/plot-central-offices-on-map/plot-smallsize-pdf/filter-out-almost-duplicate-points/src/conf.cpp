@@ -48,8 +48,8 @@ namespace Conf {
   void _ParseArgs(int argc, char* argv[]) {
     po::options_description od("Allowed options");
     od.add_options()
-      ("central_office_locations",
-       po::value<string>()->default_value(GetStr("central_office_locations")))
+      ("central_office_locations", po::value<string>()->default_value(GetStr("central_office_locations")))
+      ("dist_sq_threshold", po::value<double>()->default_value(atof(GetStr("dist_sq_threshold").c_str())))
       ("help", "show help message")
       ;
 
