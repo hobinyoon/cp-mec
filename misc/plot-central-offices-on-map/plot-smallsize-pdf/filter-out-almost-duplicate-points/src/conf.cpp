@@ -66,6 +66,7 @@ namespace Conf {
 
     //__EditYaml<size_t>("micro_edge_dc.num_deployed", vm);
     __EditYaml<string>("central_office_locations", vm);
+    __EditYaml<double>("dist_sq_threshold", vm);
   }
 
   void Init(int argc, char* argv[]) {

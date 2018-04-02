@@ -7,6 +7,7 @@
 
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <boost/regex.hpp>
 
 #include "conf.h"
 #include "cons.h"
@@ -81,6 +82,12 @@ namespace CentralOffices {
     Cons::P(boost::format("%d points after dropping %d almost duplicate points") % sparse_points.size() % num_COs_filtered_out);
 
     string fn_out = str(boost::format("%s/centraloffices-wo-almost-dup-points-%f") % Conf::DnOut() % dist_sq_threshold);
+
+    // Trim trailing 0s
+    while (boost::regex_match(fn_out, boost::regex(".+\\.\\d+0+"))) {
+      fn_out = fn_out.substr(0, fn_out.size() - 1);
+    }
+
     ofstream ofs(fn_out);
     for (auto i: sparse_points) {
       ofs << i.lat << " " << i.lon << "\n";
