@@ -5,6 +5,8 @@ IN_FNS = system("echo $IN_FNS")
 IN_FN_SIZES = system("echo $IN_FN_SIZES")
 DIST_SQ_THRESHOLDS = system("echo $DIST_SQ_THRESHOLDS")
 OUT_FN = system("echo $OUT_FN")
+USA_MAP = system("echo $HOME") . "/work/cp-mec/resource/usa-map-smallsize-0.05
+
 
 set print "-"
 
@@ -32,6 +34,8 @@ do for [i=1:words(DIST_SQ_THRESHOLDS)] {
   set mytics 2
   set grid xtics mxtics ytics mytics front lc rgb "#808080"
 
-  plot in_fn u 2:1 w p pt 7 ps 0.07 not
+  plot \
+  in_fn u 2:1 w p pt 7 ps 0.07 lc rgb "red" not, \
+  USA_MAP u 2:1 with filledcurves lw 1 fs transparent solid 0.0 border lc rgb "#808080" fc rgb "#FFFFFF" not
 }
 
