@@ -11,7 +11,8 @@ mkdir -p $DN_BUILD
 pushd $DN_BUILD > /dev/null
 cmake ..
 #cmake -DCMAKE_BUILD_TYPE=Debug ..
-time make -j
+#time make -j
+time make
 popd > /dev/null
 
 printf "\n"
