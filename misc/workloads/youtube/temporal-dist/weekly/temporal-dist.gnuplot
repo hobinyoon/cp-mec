@@ -30,7 +30,7 @@ if (1) {
   # Legend
   if (1) {
     x0=0.87
-    y0=0.57
+    y0=0.53
     x00=x0-0.01
     y00=y0-0.04
     x01=x0+0.1
@@ -38,13 +38,13 @@ if (1) {
     set obj rect from screen x00,y00 to screen x01,y01 fs noborder front
     set label "Avg" at screen x0,y0 front
 
-    y0=0.67
+    y0=0.64
     y00=y0-0.04
     y01=y0+0.04
     set obj rect from screen x00,y00 to screen x01,y01 fs noborder front
     set label "Max" at screen x0,y0 front
 
-    y0=0.39
+    y0=0.32
     y00=y0-0.04
     y01=y0+0.04
     set obj rect from screen x00,y00 to screen x01,y01 fs noborder front
