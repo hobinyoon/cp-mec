@@ -7,10 +7,11 @@ FN_OUT = system("echo $FN_OUT")
 set print "-"
 #print sprintf("MAX_CLUSTER_SIZE=%f", MAX_CLUSTER_SIZE)
 
-set terminal pdfcairo enhanced size 2.3in, (2.3*0.75)in
+set terminal pdfcairo enhanced size 2.3in, 1.6in
+
 set output FN_OUT
 
-set xtics nomirror tc rgb "black" rotate by -45
+set xtics scale 0,0 nomirror tc rgb "black" rotate by -45
 set ytics nomirror tc rgb "black" autofreq 0,0.2 format "%.1f"
 set grid xtics ytics back lc rgb "#808080"
 set border back lc rgb "#808080"
@@ -20,10 +21,12 @@ set ylabel "Number of accesses\n(relative)" offset 0.5,0
 
 set yrange[0:1]
 
-LW=3
+set size 0.97,1
+
+LW=2
 
 if (1) {
-  set xrange[-0.7:7]
+  set xrange[-0.7:6.7]
 
   set boxwidth 0.7
 
