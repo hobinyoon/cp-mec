@@ -30,12 +30,13 @@ def Init():
       #description="Desc",
       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  for k, v in yaml_root.iteritems():
-    parser.add_argument("--%s" % k
-        , type=str
-        , default=(v)
-        #, help="desc"
-        )
+  if yaml_root:
+    for k, v in yaml_root.iteritems():
+      parser.add_argument("--%s" % k
+          , type=str
+          , default=(v)
+          #, help="desc"
+          )
 
   global _args
   _args = parser.parse_args()
