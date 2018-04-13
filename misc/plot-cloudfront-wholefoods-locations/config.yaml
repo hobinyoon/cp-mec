@@ -1,0 +1,6 @@
+whole_foods_loc_db: ~/work/cp-mec-data/network/whole-foods-locations.sqlite3
+
+wf_addrs: data-whole-food-addrs
+wf_addrs_googlemaps: data-whole-food-addrs-loc-from-googlemaps
+
+cf_locs: data-cloudfront-locs
