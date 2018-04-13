@@ -39,6 +39,8 @@ TP_WF=0.6
 # CloudFront circle size
 s0(a)=sqrt(a)*0.5
 
+CS_WF=0.8
+
 # Legend
 if (1) {
   x0=0.02
@@ -69,12 +71,12 @@ if (1) {
   set label "Whole Foods:" at screen x0,y0
 
   x0=x0+0.27
-  set obj circle at screen x0,y0 size s0(c_size) fs solid TP_WF noborder fc rgb C_WF
+  set obj circle at screen x0,y0 size s0(CS_WF) fs solid TP_WF noborder fc rgb C_WF
 }
 
 plot \
 FN_CF u 4:3:(s0($2)) w circles fs transparent solid TP_CF noborder fc rgb C_CF not, \
-FN_WF u 3:2:(0.3) w circles fs transparent solid TP_WF noborder fc rgb C_WF not, \
+FN_WF u 3:2:(s0(CS_WF)) w circles fs transparent solid TP_WF noborder fc rgb C_WF not, \
 US_STATES_MAP u 2:1 w filledcurves lw 1 fs transparent solid 0.0 border lc rgb "#808080" fc rgb "#FFFFFF" not
 
 #FN_CF u 4:3:(sqrt($2)*0.4) w p pt 7 ps variable lc rgb C_CF not, \

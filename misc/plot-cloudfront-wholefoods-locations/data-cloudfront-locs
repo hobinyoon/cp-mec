@@ -1,5 +1,6 @@
 # https://aws.amazon.com/cloudfront/details/
 #   Geo coordinates are acquired from Google maps 
+# 41 locations total
 
 # Edge Locations:
 # city num_locations(I_think) lat lon
