@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import csv
 import geopy
 import os
 import sqlite3
@@ -152,91 +151,6 @@ class WfLocDb:
     cur = self.conn.cursor()
     cur.execute("SELECT addr, lat, lon FROM whole_foods_loc")
     return cur.fetchall()
-
-#
-#    for db_type in ["RocksDB", "Mutant"]:
-#      fn = fn0 if db_type == "RocksDB" else fn1
-#      with open(fn) as fo:
-#        for line in fo:
-#          if line.startswith("#"):
-#            continue
-#          line = line.strip()
-#          t = re.split(r" +", line)
-#          hour = int(t[1].split(":")[0])
-#
-#          sst_id = t[7]
-#          # Ignore when end sst_id is -, which means an sstable was deleted.
-#          if sst_id == "-":
-#            continue
-#          sst_id = int(sst_id)
-#
-#          sst_size = int(t[8])
-#
-#          job_id = int(t[9])
-#
-#          # Creation reason: R, F, C, -
-#          cr = t[10]
-#          temp_triggered_single_sst_migr = (t[11] == "T")
-#          migr_dirc = t[12]
-#
-#          cur.execute(q, (fn, db_type, hour, sst_id, sst_size, job_id, cr, temp_triggered_single_sst_migr, migr_dirc))
-#    conn.commit()
-#    cur.close()
-#    return conn
-
-
-#def _OpenDB():
-#  with Cons.MT("Building a location DB ..."):
-#    fn_db = "%s/whole-foods-locations.db" % Conf.DnOut()
-#
-#    if os.path.exits(fn_db):
-#      raise RuntimeError("Implement")
-#    else:
-#      conn = sqlite3.connect(fn_db)
-#      if conn is None:
-#        raise RuntimeError("Error! cannot create the database connection.")
-#      cur = conn.cursor()
-#      table_schema = """CREATE TABLE IF NOT EXISTS whole_foods_loc (
-#                          addr text NOT NULL
-#                          , lon real NOT NULL
-#                          , lat real NOT NULL
-#                        ); """
-#      cur.execute(table_schema)
-#
-#    q = """INSERT INTO sst_creation_info (fn, db_type, hour, sst_id, sst_size, job_id, creation_reason, temp_triggered_single_sst_migr, migr_dirc)
-#             VALUES (?,?,?,?,?,?,?,?,?)"""
-#
-#    for db_type in ["RocksDB", "Mutant"]:
-#      fn = fn0 if db_type == "RocksDB" else fn1
-#      with open(fn) as fo:
-#        for line in fo:
-#          if line.startswith("#"):
-#            continue
-#          line = line.strip()
-#          t = re.split(r" +", line)
-#          hour = int(t[1].split(":")[0])
-#
-#          sst_id = t[7]
-#          # Ignore when end sst_id is -, which means an sstable was deleted.
-#          if sst_id == "-":
-#            continue
-#          sst_id = int(sst_id)
-#
-#          sst_size = int(t[8])
-#
-#          job_id = int(t[9])
-#
-#          # Creation reason: R, F, C, -
-#          cr = t[10]
-#          temp_triggered_single_sst_migr = (t[11] == "T")
-#          migr_dirc = t[12]
-#
-#          cur.execute(q, (fn, db_type, hour, sst_id, sst_size, job_id, cr, temp_triggered_single_sst_migr, migr_dirc))
-#    conn.commit()
-#    cur.close()
-#    return conn
-
-
 
 
 if __name__ == "__main__":
