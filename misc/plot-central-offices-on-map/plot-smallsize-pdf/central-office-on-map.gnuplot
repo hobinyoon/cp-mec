@@ -44,7 +44,7 @@ do for [i=1:words(DIST_SQ_THRESHOLDS)] {
   }
 
   plot \
-  in_fn u 2:1 w p pt 7 ps 0.07 lc rgb "red" not, \
+  in_fn u 2:1 w p pt 7 ps 0.06 lc rgb "red" not, \
   USA_MAP u 2:1 w filledcurves lw 1 fs transparent solid 0.0 border lc rgb "#404040" fc rgb "#FFFFFF" not
 }
 

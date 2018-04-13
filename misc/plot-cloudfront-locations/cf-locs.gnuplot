@@ -9,8 +9,8 @@ US_STATES_MAP = "~/work/cp-mec/resource/usa-map-smallsize-0.05"
 set print "-"
 #print sprintf("MAX_CLUSTER_SIZE=%f", MAX_CLUSTER_SIZE)
 
-#size_x=2.3
-size_x=3.0
+size_x=2.3
+#size_x=3.0
 set terminal pdfcairo enhanced size (size_x)in, (size_x*0.75)in
 set output FN_OUT
 

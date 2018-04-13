@@ -9,8 +9,8 @@ US_STATES_MAP = "~/work/cp-mec/resource/usa-map-smallsize-0.05"
 set print "-"
 #print sprintf("MAX_CLUSTER_SIZE=%f", MAX_CLUSTER_SIZE)
 
-#size_x=2.3
-size_x=3.0
+size_x=2.3
+#size_x=3.0
 set terminal pdfcairo enhanced size (size_x)in, (size_x*0.75)in
 set output FN_OUT
 
@@ -25,7 +25,7 @@ set yrange [24:49.5]
 set noborder
 set notics
 
-PS=0.2
+PS=0.3
 
 # darkgreen
 LC="#006400"
