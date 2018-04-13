@@ -1,0 +1,4 @@
+whole_foods_loc_db: ~/work/cp-mec-data/network/whole-foods-locations.sqlite3
+
+addrs: data-whole-food-addrs
+addrs_googlemaps: data-whole-food-addrs-loc-from-googlemaps
