@@ -58,6 +58,9 @@ namespace UtilityCurves {
       string line;
       map<long, long>* uc = new map<long, long>();
       int parse_state = 0;  // 0: uninitialized, 1: LRU, 2: LFU, 3: Optimal
+      long cache_size_prev = -1;
+      long bytes_hit_prev = -1;
+      bool stored_last = false;
       while (getline(ifs, line)) {
         if (line.size() == 0)
           continue;
@@ -84,24 +87,46 @@ namespace UtilityCurves {
 
           long cache_size = atol(t[0].c_str());
           long bytes_hit = atol(t[1].c_str());
-          uc->emplace(cache_size, bytes_hit);
+
+          if (cache_size_prev == -1) {
+            uc->emplace(cache_size, bytes_hit);
+            stored_last = true;
+          } else {
+            if (bytes_hit_prev == bytes_hit) {
+              // Skip intermediate points when bytes_hit doesn't change to save space
+              stored_last = false;
+            } else {
+              if (! stored_last)
+                uc->emplace(cache_size_prev, bytes_hit_prev);
+              uc->emplace(cache_size, bytes_hit);
+              stored_last = true;
+            }
+          }
+
+          cache_size_prev = cache_size;
+          bytes_hit_prev = bytes_hit;
         } else {
           break;
         }
       }
 
+      if (! stored_last)
+        uc->emplace(cache_size_prev, bytes_hit_prev);
+
       string fn0 = it->path().filename().string();
       _fn_uc.emplace(fn0, uc);
 
-      if (i == 5)
-        break;
+      //if (i == 5)
+      //  break;
       i ++;
     }
 
-    for (auto i: _fn_uc) {
-      Cons::P(boost::format("%s") % i.first);
-      for (auto j: *(i.second)) {
-        Cons::P(boost::format("  %ld %ld") % j.first % j.second);
+    if (false) {
+      for (auto i: _fn_uc) {
+        Cons::P(boost::format("%s") % i.first);
+        for (auto j: *(i.second)) {
+          Cons::P(boost::format("  %ld %ld") % j.first % j.second);
+        }
       }
     }
   }
