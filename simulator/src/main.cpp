@@ -5,6 +5,7 @@
 #include "cons.h"
 #include "central-office.h"
 #include "util.h"
+#include "utility-curve.h"
 #include "youtube-access.h"
 
 using namespace std;
@@ -28,7 +29,9 @@ int main(int argc, char* argv[]) {
     //    Could plot a CDF of them or an aggregate hit ratio
     //  Data access latency
 
-    YoutubeAccess::Load();
+    UtilityCurves::Load();
+
+    //YoutubeAccess::Load();
 
     //CentralOffices::Load();
 
@@ -37,6 +40,7 @@ int main(int argc, char* argv[]) {
     {
       Cons::MT _("Freeing memory ...");
       YoutubeAccess::FreeMem();
+      UtilityCurves::FreeMem();
     }
   } catch (const exception& e) {
     cerr << "Got an exception: " << e.what() << "\n";
