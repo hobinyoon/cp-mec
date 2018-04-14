@@ -34,6 +34,12 @@ int main(int argc, char* argv[]) {
 
     UtilityCurves::Load();
 
+    // TODO: allocate some amount of cache uniformly on every node
+    //   Start by looking at the amount of cache space for perfect caching. Get it from UtilityCurves
+    //
+    // World::InitCaches();
+    // World::PlayWorkload();
+
     {
       Cons::MT _("Freeing memory ...");
       YoutubeAccess::FreeMem();

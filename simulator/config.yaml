@@ -3,6 +3,7 @@ video_accesses_by_COs: ~/work/cp-mec/misc/calc-video-acc-reqs-at-central-offices
 utility_curves: ~/work/cp-mec-data/utility-curves/youtube-CO.tar.7z
 
 # Skip workloads and utility curves that are over max_co_id (max CO ID) for saving time during dev.
+#   Set to -1 for no limit.
 max_co_id: 100
 
 # video_accesses_by_COs: ~/work/cp-mec/misc/calc-video-acc-reqs-at-central-offices/.output/centraloffice-videoaccesses
