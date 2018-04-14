@@ -1,6 +1,4 @@
 #include <fstream>
-#include <mutex>
-#include <thread>
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
@@ -8,11 +6,11 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 
-#include "central-office.h"
 #include "conf.h"
 #include "cons.h"
 #include "util.h"
 #include "utility-curve.h"
+#include "youtube-access.h"
 
 using namespace std;
 
@@ -60,6 +58,9 @@ namespace UtilityCurves {
         Cons::P(boost::format("Passed max_co_id %d. Stop loading") % max_co_id);
         break;
       }
+
+      if (! YoutubeAccess::CoHasAccesses(co_id))
+        continue;
 
       const bf::path& p = i.second;
       const string& fn = p.string();

@@ -29,13 +29,10 @@ int main(int argc, char* argv[]) {
     //    Could plot a CDF of them or an aggregate hit ratio
     //  Data access latency
 
+    // Load YouTube accesses first to avoid loading unnecessary (one-hit per CO) utility curves.
+    YoutubeAccess::Load();
+
     UtilityCurves::Load();
-
-    //YoutubeAccess::Load();
-
-    //CentralOffices::Load();
-
-    //YoutubeAccess::MapAccessToCentraloffice();
 
     {
       Cons::MT _("Freeing memory ...");

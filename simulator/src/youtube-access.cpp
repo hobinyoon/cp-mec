@@ -10,37 +10,32 @@
 #include "central-office.h"
 #include "conf.h"
 #include "cons.h"
-#include "tweet.h"
+
+// TODO: may not need this at all
+//#include "tweet.h"
+
 #include "util.h"
 #include "youtube-access.h"
 
 using namespace std;
 
 namespace YoutubeAccess {
-  vector<Tweet*> _entries;
+  namespace bf = boost::filesystem;
 
-  const vector<Tweet*>& Entries() {
-    return _entries;
-  }
+  // map<co_id, vector<video_id_accessed> >
+  map<int, vector<string>* > _coid_accesses;
 
-  void _LoadReqs() {
+  void Load() {
     string fn = Conf::GetFn("video_accesses_by_COs");
-    if (! boost::filesystem::exists(fn))
+    if (! bf::exists(fn))
       THROW("Unexpected");
 
-    Cons::MT _(boost::format("Loading YouTube video accesses from %s ...") % fn);
+    Cons::MT _(boost::format("Loading YouTube video accesses by COs from %s ...") % fn);
 
-    // TODO: update
-    // TODO: keep going!
-    // map<co_id, num_accesses>
-    map<int, int> coid_accesses;
-    bool load_first_few = true;
-    const int num_COs_to_load = 500;
-    int num_COs_loaded = 0;
+    int max_co_id = atoi(Conf::GetStr("max_co_id").c_str());
 
     ifstream ifs(fn);
     string line;
-    int num_COs_with_one_req = 0;
     while (getline(ifs, line)) {
       if ((line.size() == 0) || (line[0] == '#'))
         continue;
@@ -52,20 +47,20 @@ namespace YoutubeAccess {
       boost::split(t, line, sep);
       if (t.size() != 4)
         THROW(boost::format("Unexpected [%s]") % line);
-      int co_id = atoi(t[0].c_str());
-      int num_accesses = atoi(t[3].c_str());
 
-      if (num_accesses <= 0) {
-        THROW("Unexpected");
-      } else if (num_accesses == 1) {
-        // Ignore one-hit COs
-        if (! getline(ifs, line))
-          THROW(boost::format("Unexpected [%s]") % line);
-        num_COs_with_one_req ++;
+      int co_id = atoi(t[0].c_str());
+      if (max_co_id != -1 && max_co_id < co_id) {
+        Cons::P(boost::format("Passed max_co_id %d. Stop loading") % max_co_id);
+        break;
+      }
+
+      int num_accesses = atoi(t[3].c_str());
+      if (num_accesses <= 1) {
+        THROW(boost::format("Unexpected [%s]") % line);
         continue;
       }
 
-      coid_accesses.emplace(co_id, num_accesses);
+      vector<string>* vids = new vector<string>();
 
       for (int i = 0; i < num_accesses; i ++) {
         if (! getline(ifs, line))
@@ -78,199 +73,21 @@ namespace YoutubeAccess {
         // tweet_id user_id created_at(date_time) latitude longitude youtube_video_id
         if (t.size() != 7)
           THROW(boost::format("Unexpected %d [%s]") % t.size() % line2);
+        vids->push_back(t[6]);
       }
 
-      if (load_first_few) {
-        num_COs_loaded ++;
-        if (num_COs_loaded == num_COs_to_load)
-          break;
-      }
+      _coid_accesses.emplace(co_id, vids);
     }
-
-    Cons::P(boost::format("Reqs from %d COs loaded. Ignored %d COs with one req.")
-        % coid_accesses.size() % num_COs_with_one_req);
+    Cons::P(boost::format("Loaded video access reqs from %d COs.") % _coid_accesses.size());
   }
 
-  void _GenFileForCoordPlot() {
-    // Make a file with coordinate, in_usa field for plotting
-    Cons::MT _("Generating a (coordinate, in_usa) file ...");
-
-    string fn = str(boost::format("%s/coord-in_usa-%s") % Conf::DnOut()
-        % boost::filesystem::path(Conf::GetStr("youtube_workload")).filename().string());
-    ofstream ofs(fn);
-    for (auto e: _entries) {
-      ofs << boost::format("%f %f\n")
-        % e->geo_lati
-        % e->geo_longi;
-    }
-    ofs.close();
-    Cons::P(boost::format("created file %s %d") % fn % boost::filesystem::file_size(fn));
-    exit(0);
-  }
-
-  void Load() {
-    _LoadReqs();
-
-    //_GenFileForCoordPlot();
+  bool CoHasAccesses(int co_id) {
+    return (_coid_accesses.find(co_id) != _coid_accesses.end());
   }
 
   void FreeMem() {
-    if (_entries.size() == 0)
-      return;
-
-    for (auto e: _entries)
-      delete e;
-    _entries.clear();
-  }
-
-  map<const CentralOffice*, vector<const Tweet*> > _co_accesses;
-  mutex _co_accesses_mutex;
-
-  void _MapSerial() {
-    // Serial processing is not that slow. Takes about 1 min.
-    int i = 0;
-    size_t e_size = _entries.size();
-    for (const auto t: _entries) {
-      CentralOffice* co = CentralOffices::GetNearest(t->geo_lati, t->geo_longi);
-      if (co == nullptr)
-        THROW("Unexpected");
-      //Cons::P(boost::format("%s") % *co);
-
-      auto it = _co_accesses.find(co);
-      if (it == _co_accesses.end()) {
-        vector<const Tweet*> tweets;
-        tweets.push_back(t);
-        _co_accesses.emplace(co, tweets);
-      } else {
-        it->second.push_back(t);
-      }
-
-      if (i % 10000 == 0) {
-        Cons::ClearLine();
-        Cons::Pnnl(boost::format("%.2f%%") % (100.0 * i / e_size));
-      }
-      i ++;
-    }
-    Cons::ClearLine();
-    Cons::P("100.00%");
-
-    Cons::P(boost::format("mapped %d YouTube accesses to COs") % i);
-  }
-
-  void _MapP0(unsigned int i_begin, unsigned int i_end) {
-    try {
-      map<const CentralOffice*, vector<const Tweet*> > co_accesses;
-
-      for (unsigned int i = i_begin; i < i_end; i ++) {
-        const Tweet* t = _entries[i];
-        CentralOffice* co = CentralOffices::GetNearest(t->geo_lati, t->geo_longi);
-        if (co == nullptr)
-          THROW("Unexpected");
-        //Cons::P(boost::format("%s") % *co);
-
-        auto it = co_accesses.find(co);
-        if (it == co_accesses.end()) {
-          vector<const Tweet*> tweets;
-          tweets.push_back(t);
-          co_accesses.emplace(co, tweets);
-        } else {
-          it->second.push_back(t);
-        }
-      }
-
-      {
-        // Merge the local co_accesses to the global one
-        lock_guard<mutex> lock(_co_accesses_mutex);
-
-        for (auto i: co_accesses) {
-          const CentralOffice* co = i.first;
-          vector<const Tweet*>& tweets = i.second;
-
-          auto it = _co_accesses.find(co);
-          if (it == _co_accesses.end()) {
-            _co_accesses.emplace(co, tweets);
-          } else {
-            copy(tweets.begin(), tweets.end(), back_inserter(it->second));
-          }
-        }
-      }
-    } catch (const exception& e) {
-      cerr << "Got an exception: " << e.what() << "\n";
-      exit(1);
-    }
-  }
-
-  void _MapParallel() {
-    {
-      Cons::MT _("Mapping in parallel ...");
-      unsigned int conc = thread::hardware_concurrency();
-      Cons::P(boost::format("%d hardware threads") % conc);
-
-      size_t e_size = _entries.size();
-      int items_per_thread = ceil(double(e_size) / conc);
-
-      vector<thread> threads;
-      for (unsigned int i = 0; i < conc; i ++) {
-        // [i_begin, i_end)
-        unsigned int i_begin = i * items_per_thread;
-        unsigned int i_end = (i + 1) * items_per_thread;
-        if (e_size < i_end)
-          i_end = e_size;
-        if (i_end < i_begin)
-          i_begin = i_end;
-        //Cons::P(boost::format("%2d %d %d") % i % i_begin % i_end);
-        threads.push_back(thread(_MapP0, i_begin, i_end));
-      }
-      for (auto& t: threads)
-        t.join();
-    }
-
-    {
-      Cons::MT _("Sorting vector<Tweet*> by their timestamps ...");
-      for (auto& i: _co_accesses) {
-        vector<const Tweet*>& tweets = i.second;
-        //for (auto t: tweets) {
-        //  Cons::P(boost::format("%s") % *t);
-        //}
-
-        sort(tweets.begin(), tweets.end(),
-            //[](const Tweet* & a, const Tweet* & b) -> bool
-            [](const Tweet* a, const Tweet* b) -> bool
-            {
-              return a->created_at < b->created_at;
-            });
-
-        // Check
-        //for (auto t: i.second) {
-        //  Cons::P(boost::format("AA %s") % *t);
-        //}
-      }
-    }
-
-    // Compare the result with the serial one. Well. I think the result is correct.
-  }
-
-  void MapAccessToCentraloffice() {
-    {
-      Cons::MT _("Mapping YouTube acceses to central offices ...");
-      //_MapSerial();
-      _MapParallel();
-    }
-    {
-      Cons::MT _("Generating output file ...");
-      string fn = str(boost::format("%s/centraloffice-videoaccesses") % Conf::DnOut());
-      ofstream ofs(fn);
-      ofs << "# central_office_id latitude longitude num_video_accesses\n";
-      ofs << "#   tweet_id user_id created_at latitude longitude youtube_video_id\n";
-      ofs << "\n";
-      for (auto i: _co_accesses) {
-        ofs << boost::format("%s %d\n") % *i.first % i.second.size();
-
-        for (auto t: i.second)
-          ofs << boost::format("  %s\n") % *t;
-      }
-      ofs.close();
-      Cons::P(boost::format("created %s %d") % fn % boost::filesystem::file_size(fn));
-    }
+    for (auto i: _coid_accesses)
+      delete i.second;
+    _coid_accesses.clear();
   }
 }
