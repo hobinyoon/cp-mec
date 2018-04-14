@@ -33,12 +33,8 @@ namespace UtilityCurves {
       THROW("Unexpected");
 
     string dn = fn.substr(0, fn.size() - 7);
-
     if (! bf::exists(dn)) {
       string dn_p = bf::path(dn).parent_path().string();
-
-      string dn = bf::path(fn).parent_path().string();
-      string fn1 = bf::path(fn).filename().string();
       string cmd = str(boost::format("cd %s && 7z e -so %s | tar xf -") % dn_p % fn);
       Util::RunSubprocess(cmd);
     }
@@ -48,14 +44,30 @@ namespace UtilityCurves {
     // Start with LRU
     //   TODO: think about if you'd need the others too
 
-    int i = 0;
-
+    map<int, bf::path> coid_path;
     bf::directory_iterator end_itr; // default construction yields past-the-end
     for (bf::directory_iterator it(dn); it != end_itr; ++ it) {
-      string fn = it->path().string();
-      //Cons::P(fn);
+      int co_id = atoi(it->path().filename().string().c_str());
+      coid_path.emplace(co_id, it->path());
+    }
+    //for (auto i: coid_path)
+    //  Cons::P(boost::format("%d %s") % i.first % i.second.string());
+
+    int max_co_id = atoi(Conf::GetStr("max_co_id").c_str());
+    for (auto i: coid_path) {
+      int co_id = i.first;
+      if (max_co_id != -1 && max_co_id < co_id) {
+        Cons::P(boost::format("Passed max_co_id %d. Stop loading") % max_co_id);
+        break;
+      }
+
+      const bf::path& p = i.second;
+      const string& fn = p.string();
+      //Cons::P(boost::format("%d %s") % co_id % fn);
+
       ifstream ifs(fn);
       string line;
+      // Utility curve
       map<long, long>* uc = new map<long, long>();
       int parse_state = 0;  // 0: uninitialized, 1: LRU, 2: LFU, 3: Optimal
       long cache_size_prev = -1;
@@ -113,13 +125,10 @@ namespace UtilityCurves {
       if (! stored_last)
         uc->emplace(cache_size_prev, bytes_hit_prev);
 
-      string fn0 = it->path().filename().string();
+      string fn0 = p.filename().string();
       _fn_uc.emplace(fn0, uc);
-
-      //if (i == 5)
-      //  break;
-      i ++;
     }
+    Cons::P(boost::format("Loaded %d utility curves") % _fn_uc.size());
 
     if (false) {
       for (auto i: _fn_uc) {
