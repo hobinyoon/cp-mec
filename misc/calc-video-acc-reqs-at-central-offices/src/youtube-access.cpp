@@ -235,6 +235,10 @@ namespace YoutubeAccess {
       ofs << "#   tweet_id user_id created_at latitude longitude youtube_video_id\n";
       ofs << "\n";
       for (auto i: _co_accesses) {
+        // Skip one-request COs. Not helpful for comparing the cache placement algorithms.
+        if (i.second.size() <= 1)
+          continue;
+
         ofs << boost::format("%s %d\n") % *i.first % i.second.size();
 
         for (auto t: i.second)
