@@ -8,6 +8,7 @@
 
 #include "conf.h"
 #include "cons.h"
+#include "stat.h"
 #include "util.h"
 #include "utility-curve.h"
 #include "youtube-access.h"
@@ -129,7 +130,23 @@ namespace UtilityCurves {
       string fn0 = p.filename().string();
       _fn_uc.emplace(fn0, uc);
     }
-    Cons::P(boost::format("Loaded %d utility curves") % _fn_uc.size());
+    Cons::P(boost::format("Loaded %d utility curves.") % _fn_uc.size());
+
+    {
+      // This will be the budget upperbound, beyond which won't give you more benefit.
+      long sum_max_lru_cache_size = 0;
+      for (auto i: _fn_uc)
+        sum_max_lru_cache_size += i.second->rbegin()->first;
+      Cons::P(boost::format("sum_max_lru_cache_size=%d") % sum_max_lru_cache_size);
+    }
+
+    if (false) {
+      vector<long> max_cache_sizes;
+      for (auto i: _fn_uc)
+        max_cache_sizes.push_back(i.second->rbegin()->first);
+      string fn_cdf = str(boost::format("%s/cdf-max-lru-cache-size-per-CO-from-utility-curves") % Conf::DnOut());
+      Stat::Gen<long>(max_cache_sizes, fn_cdf);
+    }
 
     if (false) {
       for (auto i: _fn_uc) {
