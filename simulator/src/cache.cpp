@@ -145,7 +145,7 @@ namespace Caches {
     _caches.clear();
   }
 
-  void ShowStat() {
+  void _ShowStatPerCache() {
     string fmt = "%3d %3d %4d %3d";
     string header = Util::BuildHeader(fmt, "co_id cache_hits cache_misses num_items_in_cache");
     Cons::P(header);
@@ -155,5 +155,20 @@ namespace Caches {
       Cache::Stat s = c->GetStat();
       Cons::P(boost::format(fmt) % co_id % s.hits % s.misses % s.num_items);
     }
+  }
+
+  void ShowStat() {
+    long hits = 0;
+    long misses = 0;
+    for (const auto i: YoutubeAccess::CoAccesses()) {
+      int co_id = i.first;
+      Cache* c = _caches[co_id];
+      Cache::Stat s = c->GetStat();
+      //Cons::P(boost::format(fmt) % co_id % s.hits % s.misses % s.num_items);
+      hits += s.hits;
+      misses += s.misses;
+    }
+
+    Cons::P(boost::format("%f %d %d") % (double(hits) / (hits + misses)) % hits % misses);
   }
 }
