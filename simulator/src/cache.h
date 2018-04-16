@@ -1,12 +1,11 @@
 #pragma once
 
-// An LRU cache implementation
-
 #include <list>
 #include <map>
 
-class Cache {
+// An LRU cache implementation
 
+class Cache {
   // Cache item
   struct Item {
     std::string key;
@@ -45,12 +44,4 @@ public:
   };
 
   Stat GetStat();
-};
-
-
-namespace Caches {
-  void Init();
-  void PlayWorkload();
-  void FreeMem();
-  void ShowStat();
 };
