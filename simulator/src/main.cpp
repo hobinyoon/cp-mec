@@ -1,6 +1,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <iostream>
+#include "cache.h"
 #include "conf.h"
 #include "cons.h"
 #include "central-office.h"
@@ -34,14 +35,13 @@ int main(int argc, char* argv[]) {
 
     UtilityCurves::Load();
 
-    // TODO: allocate some amount of cache uniformly on every node
-    //   Start by looking at the amount of cache space for perfect caching. Get it from UtilityCurves
-    //
-    // World::InitCaches();
-    // World::PlayWorkload();
+    Caches::Init();
+    Caches::PlayWorkload();
+    Caches::ShowStat();
 
     {
       Cons::MT _("Freeing memory ...");
+      Caches::FreeMem();
       YoutubeAccess::FreeMem();
       UtilityCurves::FreeMem();
     }

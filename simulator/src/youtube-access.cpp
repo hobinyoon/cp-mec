@@ -1,7 +1,6 @@
 #include <fstream>
 #include <mutex>
 #include <thread>
-#include <vector>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
@@ -81,13 +80,18 @@ namespace YoutubeAccess {
     Cons::P(boost::format("Loaded video access reqs from %d COs.") % _coid_accesses.size());
   }
 
-  bool CoHasAccesses(int co_id) {
-    return (_coid_accesses.find(co_id) != _coid_accesses.end());
-  }
-
   void FreeMem() {
     for (auto i: _coid_accesses)
       delete i.second;
     _coid_accesses.clear();
   }
+
+  bool CoHasAccesses(int co_id) {
+    return (_coid_accesses.find(co_id) != _coid_accesses.end());
+  }
+
+  const map<int, vector<string>* >& CoAccesses() {
+    return _coid_accesses;
+  }
+
 }
