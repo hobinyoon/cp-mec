@@ -12,67 +12,85 @@ Cache::Cache(long c)
 }
 
 
-bool Cache::Get(const string& item_key) {
-	auto it = _c.find(item_key);
-	if (it == _c.end()) {
-		_misses ++;
-    return false;
-	}
+Cache::~Cache()
+{
+  _c.clear();
 
-	// Move the cache item to the front of the list
-	_l.erase(it->second);
-	auto it1 = _l.insert(_l.begin(), item_key);
+  for (auto i: _l)
+    delete i;
+  _l.clear();
+}
+
+
+bool Cache::Get(const string& item_key) {
+  auto it = _c.find(item_key);
+  if (it == _c.end()) {
+    _misses ++;
+    return false;
+  }
+
+  // Move the cache item to the front of the list
+  Item* item = *(it->second);
+  _l.erase(it->second);
+  auto it1 = _l.insert(_l.begin(), item);
 
   // Update _c to point the cache item location in _l
-	//   Use []. emplace() doesn't guarantee replacing the existing element.
+  //   Use []. emplace() doesn't guarantee replacing the existing element.
   //     Wait... really? A reference?
-	//auto p = _c.emplace(op_read->obj_id, it1);
-	//Cons::P(boost::format("emplace2: %s") % p.second);
-	_c[item_key] = it1;
-	_hits ++;
+  //auto p = _c.emplace(op_read->obj_id, it1);
+  //Cons::P(boost::format("emplace2: %s") % p.second);
+  _c[item_key] = it1;
+  _hits ++;
   return true;
 }
 
 
 // Returns true when the cache item was put in the cache. False otherwise.
 bool Cache::Put(const string& item_key, long item_size) {
-  if (_capacity == 0)
-    return false;
-
-	// Make sure it wasn't there before
-	if (_c.find(item_key) != _c.end())
-		THROW("Unexpected");
+  // Make sure the cache item wasn't there before. We don't allow duplicate items in the cache with the same key.
+  if (_c.find(item_key) != _c.end())
+    THROW("Unexpected");
 
   // When out of space, evict the oldest item (at the back)
   while (_capacity < _occupancy + item_size) {
+    if (_l.size() == 0) {
+      // Evicted all items, but still can't cache the new item.
+      return false;
+    }
+
     auto it = _l.rbegin();
-    _c.erase(*it);
-    // http://stackoverflow.com/questions/1830158/how-to-call-erase-with-a-reverse-iterator
+    Item* item = *it;
+
+    _c.erase(item->key);
+
+    // Delete the pointer to the cache item in the list
+    //   Reverse iterator and base() are off by 1
+    //     http://stackoverflow.com/questions/1830158/how-to-call-erase-with-a-reverse-iterator
     _l.erase((++it).base());
 
-    _occupancy -= item_size;
+    _occupancy -= item->size;
+
+    // Delete the cache item
+    delete item;
   }
 
-	// Insert to the front
-	auto it = _l.insert(_l.begin(), item_key);
-	//{
-	//	E* e1 = *(it);
-	//	Cons::P(boost::format("Put: %p") % e1);
-	//}
-	_c[item_key] = it;
-  _occupancy += item_size;
+  Item* item = new Item(item_key, item_size);
 
+  // Insert to the front
+  auto it = _l.insert(_l.begin(), item);
+  _c[item_key] = it;
+  _occupancy += item_size;
   return true;
 }
 
 
 Cache::Stat::Stat(long hits_, long misses_, long num_items_)
-	: hits(hits_), misses(misses_), num_items(num_items_)
+  : hits(hits_), misses(misses_), num_items(num_items_)
 {
 }
 
 Cache::Stat Cache::GetStat() {
-	return Stat(_hits, _misses, _c.size());
+  return Stat(_hits, _misses, _c.size());
 }
 
 
@@ -91,7 +109,7 @@ namespace Caches {
       int co_id = i.first;
 
       // 50 MB of cache capacity everywhere as a start
-      Cache* c = new Cache(50 * 50);
+      Cache* c = new Cache(3 * 50);
       _caches.emplace(co_id, c);
     }
   }
