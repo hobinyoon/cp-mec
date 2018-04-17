@@ -18,8 +18,8 @@ using namespace std;
 namespace UtilityCurves {
   namespace bf = boost::filesystem;
 
-  // map<fn, LRU_utility_curve>
-  map<string, map<long, long>* > _fn_uc;
+  // map<filename(CO_id), LRU_utility_curve>
+  map<int, map<long, long>* > _fn_uc;
 
   void Load() {
     string fn = Conf::GetFn("utility_curves");
@@ -110,8 +110,9 @@ namespace UtilityCurves {
               // Skip intermediate points when bytes_hit doesn't change to save space
               stored_last = false;
             } else {
-              if (! stored_last)
-                uc->emplace(cache_size_prev, bytes_hit_prev);
+              // Don't store the prev point before a change. We don't want a step function. We want slopes.
+              //if (! stored_last)
+              //  uc->emplace(cache_size_prev, bytes_hit_prev);
               uc->emplace(cache_size, bytes_hit);
               stored_last = true;
             }
@@ -127,8 +128,7 @@ namespace UtilityCurves {
       if (! stored_last)
         uc->emplace(cache_size_prev, bytes_hit_prev);
 
-      string fn0 = p.filename().string();
-      _fn_uc.emplace(fn0, uc);
+      _fn_uc.emplace(co_id, uc);
     }
     Cons::P(boost::format("Loaded %d utility curves.") % _fn_uc.size());
 
@@ -148,9 +148,10 @@ namespace UtilityCurves {
       Stat::Gen<long>(max_cache_sizes, fn_cdf);
     }
 
+    // Print the curves
     if (false) {
       for (auto i: _fn_uc) {
-        Cons::P(boost::format("%s") % i.first);
+        Cons::P(boost::format("%d") % i.first);
         for (auto j: *(i.second)) {
           Cons::P(boost::format("  %ld %ld") % j.first % j.second);
         }
