@@ -35,9 +35,9 @@ int main(int argc, char* argv[]) {
 
     UtilityCurves::Load();
 
-    Caches::Init();
-    Caches::PlayWorkload();
-    Caches::ShowStat();
+    long total_cache_size_max = UtilityCurves::SumMaxLruCacheSize();
+    // Allocate caches and replay workload
+    Caches::Run(total_cache_size_max);
 
     {
       Cons::MT _("Freeing memory ...");

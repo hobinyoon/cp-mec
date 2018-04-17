@@ -1,8 +1,6 @@
 #pragma once
 
 namespace Caches {
-  void Init();
-  void PlayWorkload();
+  void Run(long total_cache_size_max);
   void FreeMem();
-  void ShowStat();
 };

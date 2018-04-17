@@ -21,6 +21,10 @@ namespace UtilityCurves {
   // map<filename(CO_id), LRU_utility_curve>
   map<int, map<long, long>* > _fn_uc;
 
+  // The sum of the max lru cache size from the utility curves.
+  //   The value will be the budget upperbound, beyond which won't give you any more benefit.
+  long _sum_max_lru_cache_size = 0;
+
   void Load() {
     string fn = Conf::GetFn("utility_curves");
     if (! bf::exists(fn))
@@ -134,12 +138,13 @@ namespace UtilityCurves {
 
     {
       // This will be the budget upperbound, beyond which won't give you more benefit.
-      long sum_max_lru_cache_size = 0;
+      _sum_max_lru_cache_size = 0;
       for (auto i: _fn_uc)
-        sum_max_lru_cache_size += i.second->rbegin()->first;
-      Cons::P(boost::format("sum_max_lru_cache_size=%d") % sum_max_lru_cache_size);
+        _sum_max_lru_cache_size += i.second->rbegin()->first;
+      Cons::P(boost::format("_sum_max_lru_cache_size=%d") % _sum_max_lru_cache_size);
     }
 
+    // CDF of max LRU cache size
     if (false) {
       vector<long> max_cache_sizes;
       for (auto i: _fn_uc)
@@ -164,5 +169,9 @@ namespace UtilityCurves {
       delete i.second;
     }
     _fn_uc.clear();
+  }
+
+  long SumMaxLruCacheSize() {
+    return _sum_max_lru_cache_size;
   }
 }
