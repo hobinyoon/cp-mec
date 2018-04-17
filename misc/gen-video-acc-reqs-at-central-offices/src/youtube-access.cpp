@@ -94,7 +94,13 @@ namespace YoutubeAccess {
     _entries.clear();
   }
 
-  map<const CentralOffice*, vector<const Tweet*> > _co_accesses;
+  struct cmpCO {
+    bool operator()(const CentralOffice* a, const CentralOffice* b) {
+      return (a->id < b->id);
+    }
+  };
+
+  map<const CentralOffice*, vector<const Tweet*>, cmpCO> _co_accesses;
   mutex _co_accesses_mutex;
 
   void _MapSerial() {
