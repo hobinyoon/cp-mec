@@ -4,7 +4,9 @@ utility_curves: ~/work/cp-mec-data/utility-curves/youtube-CO.tar.7z
 
 # Skip workloads and utility curves that are over max_co_id (max CO ID) for saving time during dev.
 #   Set to -1 for no limit.
-max_co_id: -1
+#   22978 is the max for now. The utility curve for 22979 is missing.
+#max_co_id: -1
+max_co_id: 22978
 #max_co_id: 100
 
 

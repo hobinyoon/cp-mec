@@ -25,10 +25,7 @@ int main(int argc, char* argv[]) {
 
     Conf::Init(argc, argv);
 
-    // TODO: what do you want to measure?
-    //  Cache hit ratio at each CO.
-    //    Could plot a CDF of them or an aggregate hit ratio
-    //  Data access latency
+    // TODO: Add data access latency simulation
 
     // Load YouTube accesses first to avoid loading unnecessary (one-hit per CO) utility curves.
     YoutubeAccess::Load();
@@ -38,7 +35,7 @@ int main(int argc, char* argv[]) {
     long total_cache_size_max = UtilityCurves::SumMaxLruCacheSize();
 
     // Allocate caches and replay workload
-    Caches<string> caches;
+    Caches<int> caches;
     caches.Run(total_cache_size_max);
 
     {

@@ -19,11 +19,12 @@ namespace YoutubeAccess {
   namespace bf = boost::filesystem;
 
   // map<co_id, vector<video_id_accessed> >
-  map<int, vector<string>* > _coid_accesses;
+  map<int, vector<int>* > _coid_accesses;
 
   void _Load(const string& fn);
   void _WriteCondensed(const string& fn);
   bool _LoadCondensed(const string& fn);
+  void _ConvStrId2IntId(const vector<string>& obj_ids_str, vector<int>* obj_ids_int);
 
 
   void Load() {
@@ -69,8 +70,7 @@ namespace YoutubeAccess {
         continue;
       }
 
-      vector<string>* vids = new vector<string>();
-
+      vector<string> obj_ids_str;
       for (int i = 0; i < num_accesses; i ++) {
         if (! getline(ifs, line))
           THROW(boost::format("Unexpected [%s]") % line);
@@ -82,12 +82,34 @@ namespace YoutubeAccess {
         // tweet_id user_id created_at(date_time) latitude longitude youtube_video_id
         if (t.size() != 7)
           THROW(boost::format("Unexpected %d [%s]") % t.size() % line2);
-        vids->push_back(t[6]);
+        obj_ids_str.push_back(t[6]);
       }
 
-      _coid_accesses.emplace(co_id, vids);
+      vector<int>* obj_ids_int = new vector<int>();
+      _ConvStrId2IntId(obj_ids_str, obj_ids_int);
+      _coid_accesses.emplace(co_id, obj_ids_int);
     }
     Cons::P(boost::format("Loaded video access reqs from %d COs.") % _coid_accesses.size());
+  }
+
+
+  void _ConvStrId2IntId(const vector<string>& obj_ids_str, vector<int>* obj_ids_int) {
+    map<string, int> objid_int;
+    int idx = 0;
+    for (auto& obj_id: obj_ids_str) {
+      auto it = objid_int.find(obj_id);
+      if (it == objid_int.end()) {
+        objid_int.emplace(obj_id, idx);
+        idx ++;
+      }
+    }
+
+    for (auto& obj_id: obj_ids_str) {
+      auto it = objid_int.find(obj_id);
+      if (it == objid_int.end())
+        THROW("Unexpected");
+      obj_ids_int->push_back(it->second);
+    }
   }
 
 
@@ -100,16 +122,17 @@ namespace YoutubeAccess {
     Cons::MT _(boost::format("Generating file %s") % fn1);
     ofstream ofs(fn1);
     size_t n = _coid_accesses.size();
-		ofs.write((char*)&n, sizeof(n));
+    ofs.write((char*)&n, sizeof(n));
     for (auto i: _coid_accesses) {
       int co_id = i.first;
       ofs.write((char*)&co_id, sizeof(co_id));
 
-      vector<string>* accesses = i.second;
+      vector<int>* accesses = i.second;
       size_t n = accesses->size();
       ofs.write((char*)&n, sizeof(n));
-      for (auto& obj_id: *accesses)
-        Util::WriteStr(ofs, obj_id);
+
+      for (int obj_id: *accesses)
+        ofs.write((char*)&obj_id, sizeof(obj_id));
     }
     ofs.close();
     Cons::P(boost::format("Created %s %d") % fn1 % boost::filesystem::file_size(fn1));
@@ -139,13 +162,13 @@ namespace YoutubeAccess {
 
       size_t num_accesses;
       ifs.read((char*)&num_accesses, sizeof(num_accesses));
-      vector<string>* vids = new vector<string>();
+      vector<int>* obj_ids = new vector<int>();
       for (size_t j = 0; j < num_accesses; j ++) {
-        string obj_id;
-        Util::ReadStr(ifs, obj_id);
-        vids->push_back(obj_id);
+        int obj_id;
+        ifs.read((char*)&obj_id, sizeof(obj_id));
+        obj_ids->push_back(obj_id);
       }
-      _coid_accesses.emplace(co_id, vids);
+      _coid_accesses.emplace(co_id, obj_ids);
     }
     Cons::P(boost::format("Loaded video access reqs from %d COs.") % _coid_accesses.size());
     return true;
@@ -159,7 +182,7 @@ namespace YoutubeAccess {
   }
 
 
-  const map<int, vector<string>* >& CoAccesses() {
+  const map<int, vector<int>* >& CoAccesses() {
     return _coid_accesses;
   }
 
