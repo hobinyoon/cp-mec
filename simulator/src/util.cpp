@@ -4,7 +4,9 @@
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <fstream>
+#include <thread>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
@@ -142,11 +144,11 @@ namespace Util {
     ifs.read((char*)&str[0], s);
   }
 
-	void WriteStr(std::ofstream& ofs, const std::string& str) {
-		size_t s = str.size();
-		ofs.write((char*)&s, sizeof(s));
-		ofs.write((char*)&str[0], s);
-	}
+  void WriteStr(std::ofstream& ofs, const std::string& str) {
+    size_t s = str.size();
+    ofs.write((char*)&s, sizeof(s));
+    ofs.write((char*)&str[0], s);
+  }
 
   const string& SrcDir() {
     static string srcdir;
@@ -406,6 +408,11 @@ namespace Util {
       header += l;
 
     return header;
+  }
+
+  unsigned int NumHwThreads() {
+    static unsigned int c = thread::hardware_concurrency();
+    return c;
   }
 };
 

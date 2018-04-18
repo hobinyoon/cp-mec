@@ -41,6 +41,8 @@ namespace Util {
   std::string CurDateTime();
 
   std::string BuildHeader(const std::string& fmt, const std::string& column_names);
+
+  unsigned int NumHwThreads();
 };
 
 class _Error : public std::runtime_error {

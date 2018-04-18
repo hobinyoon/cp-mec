@@ -1,5 +1,9 @@
 #pragma once
 
+#include <map>
+#include <thread>
+#include <vector>
+
 #include "cache.h"
 #include "cons.h"
 #include "util.h"
@@ -37,9 +41,9 @@ public:
       long total_cache_size = total_cache_size_max * (i + 1) / 10;
       Cons::MT _(boost::format("total_cache_size=%d") % total_cache_size);
 
-      Caches::_AllocateCaches(total_cache_size);
-      Caches::_PlayWorkload();
-      Caches::_ReportStat(total_cache_size);
+      _AllocateCaches(total_cache_size);
+      _PlayWorkload();
+      _ReportStat(total_cache_size);
     }
   }
 
@@ -86,6 +90,8 @@ public:
 
 
   void _AllocateCachesUtilityBased(long total_cache_size) {
+    //Cons::MT _("Allocate cache space using utility curves ...");
+
     std::map<int, long> coid_cachesize;
     UbAlloc::Calc(total_cache_size, coid_cachesize);
 
@@ -100,24 +106,75 @@ public:
   void _PlayWorkload() {
     //Cons::MT _("Playing workload ...");
 
-    // This can be parallelized. We'll see.
+    int num_threads = Util::NumHwThreads();
+    size_t n = YoutubeAccess::CoAccesses().size();
 
-    for (const auto i: YoutubeAccess::CoAccesses()) {
-      int co_id = i.first;
-      auto it = _caches.find(co_id);
-      if (it == _caches.end())
+    // First few threads may have 1 more work items than the other threads due to the integer devision rounding.
+    long s1 = n / num_threads;
+    long s0 = s1 + 1;
+
+    // Allocate s0 work items for the first a threads and s1 items for the next b threads
+    //   a * s0 + b * s1 = n
+    //   a + b = num_threads
+    //
+    //   a * s0 + (num_threads - a) * s1 = n
+    //   a * (s0 - s1) + num_threads * s1 = n
+    //   a = (n - num_threads * s1) / (s0 - s1)
+    //   a = n - num_threads * s1
+    int a = n - num_threads * s1;
+    //Cons::P(boost::format("n=%d num_threads=%d s0=%d s1=%d a=%d") % n % num_threads % s0 % s1 % a);
+
+    std::vector<std::thread> threads;
+    auto it_begin = YoutubeAccess::CoAccesses().begin();
+
+    int i = 0;
+    for (; i < a; i ++) {
+      auto it_end = it_begin;
+      std::advance(it_end, s0);
+      threads.push_back(std::thread(__PlayWorkload0, this, it_begin, it_end));
+      it_begin = it_end;
+    }
+    for (; i < num_threads; i ++) {
+      auto it_end = it_begin;
+      std::advance(it_end, s1);
+      threads.push_back(std::thread(__PlayWorkload0, this, it_begin, it_end));
+      it_begin = it_end;
+    }
+    //Cons::P(boost::format("Running %d threads") % threads.size());
+    for (auto& t: threads)
+      t.join();
+
+    // You don't need to gather the results here. Each thread updates the Cache instances.
+  }
+
+
+  static void __PlayWorkload0(
+      Caches<T>* c,
+      typename std::map<int, std::vector<T>* >::const_iterator it_begin,
+      typename std::map<int, std::vector<T>* >::const_iterator it_end) {
+    c->__PlayWorkload1(it_begin, it_end);
+  }
+
+
+  void __PlayWorkload1(
+      typename std::map<int, std::vector<T>* >::const_iterator it_begin,
+      typename std::map<int, std::vector<T>* >::const_iterator it_end) {
+    for (auto it = it_begin; it != it_end; it ++) {
+      int co_id = it->first;
+      auto it1 = _caches.find(co_id);
+      if (it1 == _caches.end())
         THROW(boost::format("Unexpected. co_id=%d") % co_id);
-      Cache<T>* c = it->second;
+      Cache<T>* c = it1->second;
 
-      // i.second is of tyep vector<T>*
-      for (const auto& item_key: *i.second) {
+      // it->second is of tyep vector<T>*
+      for (const auto& item_key: *(it->second)) {
         if (c->Get(item_key)) {
           // The item is served (downloaded) from the cache
         } else {
           // The item is not in the cache.
-          //   TODO: Fetch from the origin.
+          //   TODO: Simulate fetching from the origin for the latency calculation. You can probably do an aggregate latency calculation.
           //   Put the item in the cache. For now, we don't care if the Put() succeeds or not (due to a 0-size cache).
-          // Item size is 50 MB for every video. An wild guess of the average YouTube video size downloaded.
+          // Item size is 50 MB for every video: an wild guess of the average YouTube video size downloaded.
           const long item_size = 50;
           c->Put(item_key, item_size);
         }

@@ -185,5 +185,4 @@ namespace YoutubeAccess {
   const map<int, vector<int>* >& CoAccesses() {
     return _coid_accesses;
   }
-
 }
