@@ -42,18 +42,21 @@ namespace UbAlloc {
         THROW("Unexpected");
 
       long dx = next_size - _cur_size;
-      long dy = next_gain - _cur_gain;
-      double next_gain_delta = 50 * double(dy) / dx;
+      double dy = next_gain - _cur_gain;
+      double next_gain_delta = 50 * dy / dx;
 
       _cur_size += 50;
       _cur_gain += next_gain_delta;
 
-      // This removes the floating point arithmetic error.
+      // When _cur_size passes next_size, move _uc_it by 1
       //   Think about what to do when _cur_size doesn't increase by 50, when needed.
       if (_cur_size == next_size) {
+        // This removes the floating point arithmetic error.
         _cur_gain = next_gain;
         _uc_it ++;
       }
+
+      //Cons::P(boost::format("                           %d %f %f %d %d") % _cur_size % _cur_gain % next_gain_delta % dx % dy);
 
       return next_gain_delta;
     }
@@ -72,11 +75,12 @@ namespace UbAlloc {
       coid_cachesize.emplace(co_id, 0);
     }
 
-    //map<next_gain_delta, vector<co_id> >
+    // Initialize map<next_gain_delta, vector<co_id> >
     map<double, vector<int> > ngd_coids;
     for (auto i: coid_co) {
       int co_id = i.first;
       double ngd = i.second->GetNextGainDelta();
+      //Cons::P(boost::format("Init %d %f") % co_id % ngd);
       if (ngd == 0.0)
         continue;
       auto it = ngd_coids.find(ngd);
@@ -99,6 +103,7 @@ namespace UbAlloc {
         THROW("Unexpected");
 
       int co_id = co_ids.back();
+      //Cons::P(boost::format("Alloc %d") % co_id);
 
       auto it1 = coid_cachesize.find(co_id);
       if (it1 == coid_cachesize.end())
@@ -116,6 +121,7 @@ namespace UbAlloc {
       // Update ngd_coids with the next ngd of the just-deleted CO
       CO* co = coid_co[co_id];
       double ngd = co->GetNextGainDelta();
+      //Cons::P(boost::format("Alloc %d %d %f") % co_id % it1->second % ngd);
       if (ngd != 0.0) {
         auto it2 = ngd_coids.find(ngd);
         if (it2 == ngd_coids.end())

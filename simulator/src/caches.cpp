@@ -95,7 +95,10 @@ namespace Caches {
 
     for (const auto i: YoutubeAccess::CoAccesses()) {
       int co_id = i.first;
-      Cache* c = _caches[co_id];
+      auto it = _caches.find(co_id);
+      if (it == _caches.end())
+        THROW(boost::format("Unexpected. co_id=%d") % co_id);
+      Cache* c = it->second;
 
       // i.second is of tyep vector<string>*
       for (const auto& item_key: *i.second) {

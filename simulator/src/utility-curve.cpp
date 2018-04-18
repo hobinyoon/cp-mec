@@ -49,30 +49,21 @@ namespace UtilityCurves {
     // Start with LRU
     //   TODO: think about if you'd need the others too
 
-    map<int, bf::path> coid_path;
-    bf::directory_iterator end_itr; // default construction yields past-the-end
-    for (bf::directory_iterator it(dn); it != end_itr; ++ it) {
-      int co_id = atoi(it->path().filename().string().c_str());
-      coid_path.emplace(co_id, it->path());
-    }
-    //for (auto i: coid_path)
-    //  Cons::P(boost::format("%d %s") % i.first % i.second.string());
-
     int max_co_id = atoi(Conf::GetStr("max_co_id").c_str());
-    for (auto i: coid_path) {
+
+    // const std::map<int, std::vector<std::string>* >& CoAccesses();
+    for (const auto i: YoutubeAccess::CoAccesses()) {
       int co_id = i.first;
       if (max_co_id != -1 && max_co_id < co_id) {
         Cons::P(boost::format("Passed max_co_id %d. Stop loading") % max_co_id);
         break;
       }
 
-      if (! YoutubeAccess::CoHasAccesses(co_id))
-        continue;
-
-      const bf::path& p = i.second;
-      const string& fn = p.string();
+      string fn = str(boost::format("%s/%d") % dn % co_id);
       //Cons::P(boost::format("%d %s") % co_id % fn);
 
+      if (! bf::exists(fn))
+        THROW(boost::format("Unexpected [%s]") % fn);
       ifstream ifs(fn);
       string line;
       // Utility curve

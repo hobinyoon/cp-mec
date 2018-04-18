@@ -86,10 +86,6 @@ namespace YoutubeAccess {
     _coid_accesses.clear();
   }
 
-  bool CoHasAccesses(int co_id) {
-    return (_coid_accesses.find(co_id) != _coid_accesses.end());
-  }
-
   const map<int, vector<string>* >& CoAccesses() {
     return _coid_accesses;
   }
