@@ -36,12 +36,13 @@ int main(int argc, char* argv[]) {
     UtilityCurves::Load();
 
     long total_cache_size_max = UtilityCurves::SumMaxLruCacheSize();
+
     // Allocate caches and replay workload
-    Caches::Run(total_cache_size_max);
+    Caches<string> caches;
+    caches.Run(total_cache_size_max);
 
     {
       Cons::MT _("Freeing memory ...");
-      Caches::FreeMem();
       YoutubeAccess::FreeMem();
       UtilityCurves::FreeMem();
     }
