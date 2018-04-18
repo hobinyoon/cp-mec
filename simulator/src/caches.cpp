@@ -10,9 +10,9 @@ using namespace std;
 
 
 namespace Caches {
-  //map<cache_id, Cache*>
+  //map<cache_id, Cache<string>* >
   // cache_id is CO_id for mobile COs.
-  map<int, Cache*> _caches;
+  map<int, Cache<string>* > _caches;
 
 
   void _AllocateCaches(long total_cache_size);
@@ -68,7 +68,7 @@ namespace Caches {
         cache_size = cache_size_1;
 
       //Cons::P(boost::format("%d") % cache_size);
-      Cache* c = new Cache(cache_size);
+      Cache<string>* c = new Cache<string>(cache_size);
 
       int co_id = i.first;
       _caches.emplace(co_id, c);
@@ -83,7 +83,7 @@ namespace Caches {
     for (auto i: coid_cachesize) {
       int co_id = i.first;
       long cache_size = i.second;
-      _caches.emplace(co_id, new Cache(cache_size));
+      _caches.emplace(co_id, new Cache<string>(cache_size));
     }
   }
 
@@ -98,7 +98,7 @@ namespace Caches {
       auto it = _caches.find(co_id);
       if (it == _caches.end())
         THROW(boost::format("Unexpected. co_id=%d") % co_id);
-      Cache* c = it->second;
+      Cache<string>* c = it->second;
 
       // i.second is of tyep vector<string>*
       for (const auto& item_key: *i.second) {
@@ -128,8 +128,8 @@ namespace Caches {
     Cons::P(header);
     for (const auto i: YoutubeAccess::CoAccesses()) {
       int co_id = i.first;
-      Cache* c = _caches[co_id];
-      Cache::Stat s = c->GetStat();
+      Cache<string>* c = _caches[co_id];
+      Cache<string>::Stat s = c->GetStat();
       Cons::P(boost::format(fmt) % co_id % s.hits % s.misses % s.num_items);
     }
   }
@@ -139,8 +139,8 @@ namespace Caches {
     long misses = 0;
     for (const auto i: YoutubeAccess::CoAccesses()) {
       int co_id = i.first;
-      Cache* c = _caches[co_id];
-      Cache::Stat s = c->GetStat();
+      Cache<string>* c = _caches[co_id];
+      Cache<string>::Stat s = c->GetStat();
       //Cons::P(boost::format(fmt) % co_id % s.hits % s.misses % s.num_items);
       hits += s.hits;
       misses += s.misses;
