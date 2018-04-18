@@ -68,8 +68,17 @@ public:
   void _AllocateCaches(long total_cache_size) {
     //Cons::MT _("Initializing caches ...");
     _FreeMem();
-    //_AllocateCachesUniform(total_cache_size);
-    _AllocateCachesUtilityBased(total_cache_size);
+
+    std::string p = Conf::Get("placement_stragegy");
+    if (p == "uniform") {
+      _AllocateCachesUniform(total_cache_size);
+    } else if (p == "req_volume_based") {
+      _AllocateCachesReqVolBased(total_cache_size);
+    } else if (p == "utility_based") {
+      _AllocateCachesUtilityBased(total_cache_size);
+    } else {
+      THROW("Unexpected");
+    }
   }
 
 
@@ -102,6 +111,50 @@ public:
 
       int co_id = i.first;
       _caches.emplace(co_id, c);
+    }
+  }
+
+
+  void _AllocateCachesReqVolBased(long total_cache_size) {
+    long total_num_reqs = 0;
+    for (auto i: YoutubeAccess::CoAccesses())
+      total_num_reqs += i.second->size();
+
+    std::map<int, long> coid_cachesize;
+    long total_allocated = 0;
+    for (auto i: YoutubeAccess::CoAccesses()) {
+      int co_id = i.first;
+      size_t num_reqs = i.second->size();
+      long s = double(total_cache_size) * num_reqs / total_num_reqs;
+      coid_cachesize.emplace(co_id, s);
+      total_allocated += s;
+    }
+
+    long remainder = total_cache_size - total_allocated;
+    //Cons::P(boost::format("total_cache_size=%d total_allocated=%d remainder=%d")
+    //    % total_cache_size % total_allocated % remainder);
+
+    //long alloc0 = 0;
+    //for (auto& i: coid_cachesize)
+    //  alloc0 += i.second;
+
+    long j = 0;
+    for (auto& i: coid_cachesize) {
+      i.second ++;
+      j ++;
+      if (j == remainder)
+        break;
+    }
+
+    //long alloc1 = 0;
+    //for (auto& i: coid_cachesize)
+    //  alloc1 += i.second;
+    //Cons::P(boost::format("alloc0=%d alloc1=%d") % alloc0 % alloc1);
+
+    for (auto i: coid_cachesize) {
+      int co_id = i.first;
+      long cache_size = i.second;
+      _caches.emplace(co_id, new Cache<T>(cache_size));
     }
   }
 
