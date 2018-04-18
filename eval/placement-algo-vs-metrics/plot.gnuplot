@@ -24,6 +24,7 @@ set border back lc rgb "#808080"
 set xlabel "Total cache space allocated (TB)"
 set ylabel "Aggregate\ncache hit ratio"
 
+set xrange [0:]
 set yrange [0:]
 
 set key bottom right
@@ -31,7 +32,7 @@ set key bottom right
 PS=0.3
 
 plot \
-FN_UNI u ($1/1024.0/1024):2 w lp pt 7 ps PS lc rgb "blue" t "Uniform", \
-FN_UB  u ($1/1024.0/1024):2 w lp pt 7 ps PS lc rgb "red"  t "Utility-based, greedy"
+FN_UB  u ($1/1024.0/1024):2 w lp pt 7 ps PS lc rgb "red"  t "Utility-based, greedy", \
+FN_UNI u ($1/1024.0/1024):2 w lp pt 7 ps PS lc rgb "blue" t "Uniform"
 
 # TODO: plot more points on the left
