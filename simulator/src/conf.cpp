@@ -50,7 +50,7 @@ namespace Conf {
     po::options_description od("Allowed options");
     od.add_options()
       ("video_accesses_by_COs",
-       po::value<string>()->default_value(GetStr("video_accesses_by_COs")))
+       po::value<string>()->default_value(Get("video_accesses_by_COs")))
       ("help", "show help message")
       ;
 
@@ -77,13 +77,16 @@ namespace Conf {
 
     _dn_out = str(boost::format("%s/../.output") % boost::filesystem::path(__FILE__).parent_path().string());
     boost::filesystem::create_directories(_dn_out);
+
+    Cons::P("Options:");
+    Cons::P(Util::Indent(Desc(), 2));
   }
 
-  YAML::Node Get(const std::string& k) {
+  YAML::Node GetNode(const std::string& k) {
     return _yaml_root[k];
   }
 
-  string GetStr(const std::string& k) {
+  string Get(const std::string& k) {
     return _yaml_root[k].as<string>();
   }
 
@@ -91,7 +94,7 @@ namespace Conf {
     // Use boost::regex. C++11 regex works from 4.9. Ubuntu 14.04 has g++ 4.8.4.
     //   http://stackoverflow.com/questions/8060025/is-this-c11-regex-error-me-or-the-compiler
     return boost::regex_replace(
-        GetStr(k)
+        Get(k)
         , boost::regex("~")
         , Util::HomeDir());
   }

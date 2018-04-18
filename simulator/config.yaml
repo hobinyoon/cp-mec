@@ -7,8 +7,14 @@ utility_curves: ~/work/cp-mec-data/utility-curves/youtube-CO.tar.7z
 #   22978 is the max for now. The utility curve for 22979 is missing.
 #max_co_id: -1
 max_co_id: 22978
-#max_co_id: 100
+#max_co_id: 50
 
+# linear or exponential
+cache_size_increment_type: exponential
+#cache_size_increment_type: linear
+
+#convert_utility_curves_to_convex: false
+convert_utility_curves_to_convex: true
 
 # Hit ratio of Facebook edge caches
 # - Huang et al. - 2013 - An analysis of Facebook photo caching

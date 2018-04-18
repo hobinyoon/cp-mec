@@ -7,8 +7,8 @@
 namespace Conf {
   void Init(int argc, char* argv[]);
 
-  YAML::Node Get(const std::string& k);
-  std::string GetStr(const std::string& k);
+  YAML::Node GetNode(const std::string& k);
+  std::string Get(const std::string& k);
   std::string GetFn(const std::string& k);
 
   const std::string Desc();

@@ -42,7 +42,7 @@ namespace YoutubeAccess {
   void _Load(const string& fn) {
     Cons::MT _(boost::format("Loading YouTube video accesses by COs from %s ...") % fn);
 
-    int max_co_id = atoi(Conf::GetStr("max_co_id").c_str());
+    int max_co_id = atoi(Conf::Get("max_co_id").c_str());
 
     ifstream ifs(fn);
     string line;
@@ -147,7 +147,7 @@ namespace YoutubeAccess {
 
     Cons::MT _(boost::format("Loading condensed YouTube video accesses by COs from %s ...") % fn1);
 
-    int max_co_id = atoi(Conf::GetStr("max_co_id").c_str());
+    int max_co_id = atoi(Conf::Get("max_co_id").c_str());
 
     ifstream ifs(fn1);
     size_t num_COs;

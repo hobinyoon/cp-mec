@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "cache.h"
+#include "conf.h"
 #include "cons.h"
 #include "util.h"
 #include "youtube-access.h"
@@ -37,12 +38,11 @@ public:
 
   // Allocate caches and replay workload
   void Run(long total_cache_size_max) {
-    // Log-scale cache size exploration
-    if (true) {
+    std::string inc_type = Conf::Get("cache_size_increment_type");
+    if (inc_type == "exponential") {
       long total_cache_size = total_cache_size_max;
       while (true) {
         //Cons::MT _(boost::format("total_cache_size=%d") % total_cache_size);
-
         _AllocateCaches(total_cache_size);
         _PlayWorkload();
         _ReportStat(total_cache_size);
@@ -51,18 +51,16 @@ public:
           break;
         total_cache_size /= 2;
       }
-    }
-
-    // Linear-scale cache size exploration
-    if (false) {
+    } else if (inc_type == "linear") {
       for (int i = 0; i < 10; i ++) {
         long total_cache_size = total_cache_size_max * (i + 1) / 10;
-        Cons::MT _(boost::format("total_cache_size=%d") % total_cache_size);
-
+        //Cons::MT _(boost::format("total_cache_size=%d") % total_cache_size);
         _AllocateCaches(total_cache_size);
         _PlayWorkload();
         _ReportStat(total_cache_size);
       }
+    } else {
+      THROW("Unexpected");
     }
   }
 
