@@ -15,6 +15,7 @@
 
 using namespace std;
 
+
 namespace UtilityCurves {
   namespace bf = boost::filesystem;
 
@@ -24,6 +25,7 @@ namespace UtilityCurves {
   // The sum of the max lru cache size from the utility curves.
   //   The value will be the budget upperbound, beyond which won't give you any more benefit.
   long _sum_max_lru_cache_size = 0;
+
 
   void Load() {
     string fn = Conf::GetFn("utility_curves");
@@ -76,9 +78,9 @@ namespace UtilityCurves {
       // Utility curve
       map<long, long>* uc = new map<long, long>();
       int parse_state = 0;  // 0: uninitialized, 1: LRU, 2: LFU, 3: Optimal
-      long cache_size_prev = -1;
-      long bytes_hit_prev = -1;
-      bool stored_last = false;
+      //long cache_size_prev = -1;
+      long bytes_hit_prev = 0;
+      //bool stored_last = false;
       while (getline(ifs, line)) {
         if (line.size() == 0)
           continue;
@@ -106,31 +108,29 @@ namespace UtilityCurves {
           long cache_size = atol(t[0].c_str());
           long bytes_hit = atol(t[1].c_str());
 
-          if (cache_size_prev == -1) {
+          if (bytes_hit_prev == bytes_hit) {
+            // Skip intermediate points when bytes_hit doesn't change to save space
+            //stored_last = false;
+          } else if (bytes_hit_prev < bytes_hit) {
+            // Don't store the prev point before a change. We don't want a step function. We want slopes.
+            //if (! stored_last)
+            //  uc->emplace(cache_size_prev, bytes_hit_prev);
             uc->emplace(cache_size, bytes_hit);
-            stored_last = true;
+            //stored_last = true;
           } else {
-            if (bytes_hit_prev == bytes_hit) {
-              // Skip intermediate points when bytes_hit doesn't change to save space
-              stored_last = false;
-            } else {
-              // Don't store the prev point before a change. We don't want a step function. We want slopes.
-              //if (! stored_last)
-              //  uc->emplace(cache_size_prev, bytes_hit_prev);
-              uc->emplace(cache_size, bytes_hit);
-              stored_last = true;
-            }
+            THROW("Unexpected");
           }
 
-          cache_size_prev = cache_size;
+          //cache_size_prev = cache_size;
           bytes_hit_prev = bytes_hit;
         } else {
           break;
         }
       }
 
-      if (! stored_last)
-        uc->emplace(cache_size_prev, bytes_hit_prev);
+      // You don't need to store the last point when its bytes_hit is the same. Otherwise you get a loose max cache space.
+      //if (! stored_last)
+      //  uc->emplace(cache_size_prev, bytes_hit_prev);
 
       _fn_uc.emplace(co_id, uc);
     }
@@ -139,8 +139,12 @@ namespace UtilityCurves {
     {
       // This will be the budget upperbound, beyond which won't give you more benefit.
       _sum_max_lru_cache_size = 0;
-      for (auto i: _fn_uc)
-        _sum_max_lru_cache_size += i.second->rbegin()->first;
+      for (auto i: _fn_uc) {
+        auto uc = i.second;
+        if (uc->size() == 0)
+          continue;
+        _sum_max_lru_cache_size += uc->rbegin()->first;
+      }
       Cons::P(boost::format("_sum_max_lru_cache_size=%d") % _sum_max_lru_cache_size);
     }
 
@@ -164,6 +168,7 @@ namespace UtilityCurves {
     }
   }
 
+
   void FreeMem() {
     for (auto i: _fn_uc) {
       delete i.second;
@@ -171,7 +176,13 @@ namespace UtilityCurves {
     _fn_uc.clear();
   }
 
+
   long SumMaxLruCacheSize() {
     return _sum_max_lru_cache_size;
+  }
+
+
+  const map<int, map<long, long>* >& Get() {
+    return _fn_uc;
   }
 }

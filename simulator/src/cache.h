@@ -30,6 +30,8 @@ public:
   Cache(long c);
   ~Cache();
 
+  void Resize(long c);
+
   // Returns true when the video with key exists. False otherwise.
   bool Get(const std::string& item_key);
 

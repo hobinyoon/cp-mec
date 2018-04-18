@@ -3,6 +3,8 @@
 #include "cons.h"
 #include "util.h"
 #include "youtube-access.h"
+#include "ub-alloc.h"
+#include "utility-curve.h"
 
 using namespace std;
 
@@ -15,6 +17,7 @@ namespace Caches {
 
   void _AllocateCaches(long total_cache_size);
   void _AllocateCachesUniform(long total_cache_size);
+  void _AllocateCachesUtilityBased(long total_cache_size);
   void _PlayWorkload();
   void _ReportStat(long total_cache_size);
 
@@ -35,12 +38,12 @@ namespace Caches {
   void _AllocateCaches(long total_cache_size) {
     //Cons::MT _("Initializing caches ...");
     FreeMem();
-    _AllocateCachesUniform(total_cache_size);
+    //_AllocateCachesUniform(total_cache_size);
+    _AllocateCachesUtilityBased(total_cache_size);
   }
 
 
   void _AllocateCachesUniform(long total_cache_size) {
-    // Allocate cache
     size_t num_COs = YoutubeAccess::CoAccesses().size();
 
     // Some caches have 1 bytes bigger size than the others due to the integer division.
@@ -69,6 +72,18 @@ namespace Caches {
 
       int co_id = i.first;
       _caches.emplace(co_id, c);
+    }
+  }
+
+
+  void _AllocateCachesUtilityBased(long total_cache_size) {
+    map<int, long> coid_cachesize;
+    UbAlloc::Calc(total_cache_size, coid_cachesize);
+
+    for (auto i: coid_cachesize) {
+      int co_id = i.first;
+      long cache_size = i.second;
+      _caches.emplace(co_id, new Cache(cache_size));
     }
   }
 

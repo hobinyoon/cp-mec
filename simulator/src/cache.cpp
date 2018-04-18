@@ -22,6 +22,14 @@ Cache::~Cache()
 }
 
 
+void Cache::Resize(long c) {
+  _capacity = c;
+
+  if (0 < _l.size())
+    THROW("Implement when needed");
+}
+
+
 bool Cache::Get(const string& item_key) {
   auto it = _c.find(item_key);
   if (it == _c.end()) {
