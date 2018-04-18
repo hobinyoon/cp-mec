@@ -37,13 +37,32 @@ public:
 
   // Allocate caches and replay workload
   void Run(long total_cache_size_max) {
-    for (int i = 0; i < 10; i ++) {
-      long total_cache_size = total_cache_size_max * (i + 1) / 10;
-      Cons::MT _(boost::format("total_cache_size=%d") % total_cache_size);
+    // Log-scale cache size exploration
+    if (true) {
+      long total_cache_size = total_cache_size_max;
+      while (true) {
+        //Cons::MT _(boost::format("total_cache_size=%d") % total_cache_size);
 
-      _AllocateCaches(total_cache_size);
-      _PlayWorkload();
-      _ReportStat(total_cache_size);
+        _AllocateCaches(total_cache_size);
+        _PlayWorkload();
+        _ReportStat(total_cache_size);
+
+        if (total_cache_size == 0)
+          break;
+        total_cache_size /= 2;
+      }
+    }
+
+    // Linear-scale cache size exploration
+    if (false) {
+      for (int i = 0; i < 10; i ++) {
+        long total_cache_size = total_cache_size_max * (i + 1) / 10;
+        Cons::MT _(boost::format("total_cache_size=%d") % total_cache_size);
+
+        _AllocateCaches(total_cache_size);
+        _PlayWorkload();
+        _ReportStat(total_cache_size);
+      }
     }
   }
 
