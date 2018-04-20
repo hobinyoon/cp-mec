@@ -2,8 +2,9 @@
 #
 # Tested with gnuplot 4.6 patchlevel 6
 
-FN_UB = "~/work/cp-mec/simulator/results/utility-based"
-FN_UNI = "~/work/cp-mec/simulator/results/uniform"
+FN_UNI = "data-uniform"
+FN_RVB = "data-reqvolbased"
+FN_UB = "data-utilcurvebased"
 FN_OUT = "placement-algo-vs-metrics.pdf"
 
 set print "-"
@@ -16,23 +17,26 @@ set output FN_OUT
 
 #set xtics format "10^{%T}" tc rgb "black"
 #set ytics format "%.2f" tc rgb "black" #autofreq 0,0.01
-set xtics tc rgb "black"
-set ytics tc rgb "black" format "%.2f"
+set xtics nomirror tc rgb "black"
+set ytics nomirror tc rgb "black" format "%.2f"
 set grid xtics ytics
 set border back lc rgb "#808080"
 
 set xlabel "Total cache space allocated (TB)"
-set ylabel "Aggregate\ncache hit ratio"
+set ylabel "Aggregate cache hit ratio"
 
 set xrange [0:]
 set yrange [0:]
 
 set key bottom right
 
-PS=0.3
+LW=2
 
 plot \
-FN_UB  u ($1/1024.0/1024):2 w lp pt 7 ps PS lc rgb "red"  t "Utility-based, greedy", \
-FN_UNI u ($1/1024.0/1024):2 w lp pt 7 ps PS lc rgb "blue" t "Uniform"
+FN_UB  u ($1/1024.0/1024):2 w lp lw LW lc rgb "red"     t "UC", \
+FN_RVB u ($1/1024.0/1024):2 w lp lw LW lc rgb "blue"    t "REQ", \
+FN_UNI u ($1/1024.0/1024):2 w lp lw LW lc rgb "#006400" t "UNI", \
 
-# TODO: plot more points on the left
+# "Utility curve based"
+# "Request volume based"
+# "Uniform"
