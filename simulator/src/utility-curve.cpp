@@ -19,15 +19,15 @@ using namespace std;
 namespace UtilityCurves {
   namespace bf = boost::filesystem;
 
-  // map<filename(CO_id), LRU_utility_curve>
+  // map<filename(EL_id), LRU_utility_curve>
   map<int, map<long, long>* > _fn_uc;
 
   // The sum of the max lru cache size from the utility curves.
   //   The value will be the budget upperbound, beyond which won't give you any more benefit.
   long _sum_max_lru_cache_size = 0;
 
-  void _Load(int co_id, const string& dn, map<long, long>* uc);
-  void _MakeConvex(map<long, long>*& uc, int co_id);
+  void _Load(int el_id, const string& dn, map<long, long>* uc);
+  void _MakeConvex(map<long, long>*& uc, int el_id);
 
 
   void Load() {
@@ -52,22 +52,21 @@ namespace UtilityCurves {
     // Start with LRU
     //   TODO: think about if you'd need the others too
 
-    int max_co_id = atoi(Conf::Get("max_co_id").c_str());
+    int max_el_id = atoi(Conf::Get("max_el_id").c_str());
 
-    // const std::map<int, std::vector<std::string>* >& CoAccesses();
-    for (const auto i: YoutubeAccess::CoAccesses()) {
-      int co_id = i.first;
-      if (max_co_id != -1 && max_co_id < co_id) {
-        Cons::P(boost::format("Passed max_co_id %d. Stop loading") % max_co_id);
+    for (const auto i: YoutubeAccess::ElAccesses()) {
+      int el_id = i.first;
+      if (max_el_id != -1 && max_el_id < el_id) {
+        Cons::P(boost::format("Passed max_el_id %d. Stop loading") % max_el_id);
         break;
       }
 
       // Utility curve
       map<long, long>* uc = new map<long, long>();
-      _Load(co_id, dn, uc);
+      _Load(el_id, dn, uc);
       if (boost::algorithm::to_lower_copy(Conf::Get("convert_utility_curves_to_convex")) == "true")
-        _MakeConvex(uc, co_id);
-      _fn_uc.emplace(co_id, uc);
+        _MakeConvex(uc, el_id);
+      _fn_uc.emplace(el_id, uc);
     }
     Cons::P(boost::format("Loaded %d utility curves.") % _fn_uc.size());
 
@@ -88,7 +87,7 @@ namespace UtilityCurves {
       vector<long> max_cache_sizes;
       for (auto i: _fn_uc)
         max_cache_sizes.push_back(i.second->rbegin()->first);
-      string fn_cdf = str(boost::format("%s/cdf-max-lru-cache-size-per-CO-from-utility-curves") % Conf::DnOut());
+      string fn_cdf = str(boost::format("%s/cdf-max-lru-cache-size-per-EL-from-utility-curves") % Conf::DnOut());
       Stat::Gen<long>(max_cache_sizes, fn_cdf);
     }
 
@@ -104,9 +103,9 @@ namespace UtilityCurves {
   }
 
 
-  void _Load(int co_id, const string& dn, map<long, long>* uc) {
-    string fn = str(boost::format("%s/%d") % dn % co_id);
-    //Cons::P(boost::format("%d %s") % co_id % fn);
+  void _Load(int el_id, const string& dn, map<long, long>* uc) {
+    string fn = str(boost::format("%s/%d") % dn % el_id);
+    //Cons::P(boost::format("%d %s") % el_id % fn);
 
     if (! bf::exists(fn))
       THROW(boost::format("Unexpected [%s]") % fn);
@@ -170,7 +169,7 @@ namespace UtilityCurves {
 
 
   // Returns the number of points deleted
-  void _MakeConvex(map<long, long>*& uc, int co_id) {
+  void _MakeConvex(map<long, long>*& uc, int el_id) {
     // x: cache space
     // y: utility (bytes served)
 
@@ -242,7 +241,7 @@ namespace UtilityCurves {
 
     if (0 < num_points_concave) {
       if (false) {
-        Cons::P(boost::format("co_id=%d num_points_deleted=%d num_points_concave=%d") % co_id % num_points_deleted % num_points_concave);
+        Cons::P(boost::format("el_id=%d num_points_deleted=%d num_points_concave=%d") % el_id % num_points_deleted % num_points_concave);
         vector<string> s;
         long x_prev = 0;
         long y_prev = 0;

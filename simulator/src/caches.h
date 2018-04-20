@@ -15,7 +15,7 @@
 template <class T>
 class Caches {
   //map<cache_id, Cache<T>* >
-  // cache_id is CO_id for mobile COs.
+  // cache_id is the same as EL_id (edge location ID)
   std::map<int, Cache<T>* > _caches;
 
 
@@ -74,6 +74,8 @@ public:
       _AllocateCachesUniform(total_cache_size);
     } else if (p == "req_volume_based") {
       _AllocateCachesReqVolBased(total_cache_size);
+    } else if (p == "user_based") {
+      _AllocateCachesUserBased(total_cache_size);
     } else if (p == "utility_based") {
       _AllocateCachesUtilityBased(total_cache_size);
     } else {
@@ -83,25 +85,25 @@ public:
 
 
   void _AllocateCachesUniform(long total_cache_size) {
-    size_t num_COs = YoutubeAccess::CoAccesses().size();
+    size_t num_ELs = YoutubeAccess::ElAccesses().size();
 
     // Some caches have 1 bytes bigger size than the others due to the integer division.
-    long cache_size_0 = total_cache_size / num_COs;
+    long cache_size_0 = total_cache_size / num_ELs;
     long cache_size_1 = cache_size_0 + 1;
 
     // Allocate cache_size_0 MB for the first a caches and cache_size_1 MB for the others
     // a * cache_size_0 + b * cache_size_1 = total_cache_size
-    // a + b = num_COs
+    // a + b = num_ELs
     //
-    // a * cache_size_0 + (num_COs - a) * cache_size_1 = total_cache_size
-    // a * (cache_size_0 - cache_size_1) + num_COs * cache_size_1 = total_cache_size
-    // a = (total_cache_size - num_COs * cache_size_1) / (cache_size_0 - cache_size_1)
-    // a = num_COs * cache_size_1 - total_cache_size
-    int a = num_COs * cache_size_1 - total_cache_size;
+    // a * cache_size_0 + (num_ELs - a) * cache_size_1 = total_cache_size
+    // a * (cache_size_0 - cache_size_1) + num_ELs * cache_size_1 = total_cache_size
+    // a = (total_cache_size - num_ELs * cache_size_1) / (cache_size_0 - cache_size_1)
+    // a = num_ELs * cache_size_1 - total_cache_size
+    int a = num_ELs * cache_size_1 - total_cache_size;
 
     long cache_size = cache_size_0;
     int j = 0;
-    for (const auto i: YoutubeAccess::CoAccesses()) {
+    for (const auto i: YoutubeAccess::ElAccesses()) {
       j ++;
       if (a < j)
         cache_size = cache_size_1;
@@ -109,24 +111,24 @@ public:
       //Cons::P(boost::format("%d") % cache_size);
       Cache<T>* c = new Cache<T>(cache_size);
 
-      int co_id = i.first;
-      _caches.emplace(co_id, c);
+      int el_id = i.first;
+      _caches.emplace(el_id, c);
     }
   }
 
 
   void _AllocateCachesReqVolBased(long total_cache_size) {
     long total_num_reqs = 0;
-    for (auto i: YoutubeAccess::CoAccesses())
-      total_num_reqs += i.second->size();
+    for (auto i: YoutubeAccess::ElAccesses())
+      total_num_reqs += i.second->NumAccesses();
 
-    std::map<int, long> coid_cachesize;
+    std::map<int, long> elid_cachesize;
     long total_allocated = 0;
-    for (auto i: YoutubeAccess::CoAccesses()) {
-      int co_id = i.first;
-      size_t num_reqs = i.second->size();
+    for (auto i: YoutubeAccess::ElAccesses()) {
+      int el_id = i.first;
+      size_t num_reqs = i.second->NumAccesses();
       long s = double(total_cache_size) * num_reqs / total_num_reqs;
-      coid_cachesize.emplace(co_id, s);
+      elid_cachesize.emplace(el_id, s);
       total_allocated += s;
     }
 
@@ -135,11 +137,11 @@ public:
     //    % total_cache_size % total_allocated % remainder);
 
     //long alloc0 = 0;
-    //for (auto& i: coid_cachesize)
+    //for (auto& i: elid_cachesize)
     //  alloc0 += i.second;
 
     long j = 0;
-    for (auto& i: coid_cachesize) {
+    for (auto& i: elid_cachesize) {
       i.second ++;
       j ++;
       if (j == remainder)
@@ -147,14 +149,58 @@ public:
     }
 
     //long alloc1 = 0;
-    //for (auto& i: coid_cachesize)
+    //for (auto& i: elid_cachesize)
     //  alloc1 += i.second;
     //Cons::P(boost::format("alloc0=%d alloc1=%d") % alloc0 % alloc1);
 
-    for (auto i: coid_cachesize) {
-      int co_id = i.first;
+    for (auto i: elid_cachesize) {
+      int el_id = i.first;
       long cache_size = i.second;
-      _caches.emplace(co_id, new Cache<T>(cache_size));
+      _caches.emplace(el_id, new Cache<T>(cache_size));
+    }
+  }
+
+
+  void _AllocateCachesUserBased(long total_cache_size) {
+    long total_num_users = 0;
+    for (auto i: YoutubeAccess::ElAccesses())
+      total_num_users += i.second->NumUsers();
+
+    std::map<int, long> elid_cachesize;
+    long total_allocated = 0;
+    for (auto i: YoutubeAccess::ElAccesses()) {
+      int el_id = i.first;
+      size_t num_users = i.second->NumUsers();
+      long s = double(total_cache_size) * num_users / total_num_users;
+      elid_cachesize.emplace(el_id, s);
+      total_allocated += s;
+    }
+
+    long remainder = total_cache_size - total_allocated;
+    //Cons::P(boost::format("total_cache_size=%d total_allocated=%d remainder=%d")
+    //    % total_cache_size % total_allocated % remainder);
+
+    //long alloc0 = 0;
+    //for (auto& i: elid_cachesize)
+    //  alloc0 += i.second;
+
+    long j = 0;
+    for (auto& i: elid_cachesize) {
+      i.second ++;
+      j ++;
+      if (j == remainder)
+        break;
+    }
+
+    //long alloc1 = 0;
+    //for (auto& i: elid_cachesize)
+    //  alloc1 += i.second;
+    //Cons::P(boost::format("alloc0=%d alloc1=%d") % alloc0 % alloc1);
+
+    for (auto i: elid_cachesize) {
+      int el_id = i.first;
+      long cache_size = i.second;
+      _caches.emplace(el_id, new Cache<T>(cache_size));
     }
   }
 
@@ -162,13 +208,13 @@ public:
   void _AllocateCachesUtilityBased(long total_cache_size) {
     //Cons::MT _("Allocate cache space using utility curves ...");
 
-    std::map<int, long> coid_cachesize;
-    UbAlloc::Calc(total_cache_size, coid_cachesize);
+    std::map<int, long> elid_cachesize;
+    UbAlloc::Calc(total_cache_size, elid_cachesize);
 
-    for (auto i: coid_cachesize) {
-      int co_id = i.first;
+    for (auto i: elid_cachesize) {
+      int el_id = i.first;
       long cache_size = i.second;
-      _caches.emplace(co_id, new Cache<T>(cache_size));
+      _caches.emplace(el_id, new Cache<T>(cache_size));
     }
   }
 
@@ -177,7 +223,7 @@ public:
     //Cons::MT _("Playing workload ...");
 
     int num_threads = Util::NumHwThreads();
-    size_t n = YoutubeAccess::CoAccesses().size();
+    size_t n = YoutubeAccess::ElAccesses().size();
 
     // First few threads may have 1 more work items than the other threads due to the integer devision rounding.
     long s1 = n / num_threads;
@@ -195,7 +241,7 @@ public:
     //Cons::P(boost::format("n=%d num_threads=%d s0=%d s1=%d a=%d") % n % num_threads % s0 % s1 % a);
 
     std::vector<std::thread> threads;
-    auto it_begin = YoutubeAccess::CoAccesses().begin();
+    auto it_begin = YoutubeAccess::ElAccesses().begin();
 
     int i = 0;
     for (; i < a; i ++) {
@@ -220,24 +266,26 @@ public:
 
   static void __PlayWorkload0(
       Caches<T>* c,
-      typename std::map<int, std::vector<T>* >::const_iterator it_begin,
-      typename std::map<int, std::vector<T>* >::const_iterator it_end) {
+      typename std::map<int, YoutubeAccess::Accesses* >::const_iterator it_begin,
+      typename std::map<int, YoutubeAccess::Accesses* >::const_iterator it_end) {
     c->__PlayWorkload1(it_begin, it_end);
   }
 
 
   void __PlayWorkload1(
-      typename std::map<int, std::vector<T>* >::const_iterator it_begin,
-      typename std::map<int, std::vector<T>* >::const_iterator it_end) {
+      typename std::map<int, YoutubeAccess::Accesses* >::const_iterator it_begin,
+      typename std::map<int, YoutubeAccess::Accesses* >::const_iterator it_end) {
     for (auto it = it_begin; it != it_end; it ++) {
-      int co_id = it->first;
-      auto it1 = _caches.find(co_id);
+      int el_id = it->first;
+      auto it1 = _caches.find(el_id);
       if (it1 == _caches.end())
-        THROW(boost::format("Unexpected. co_id=%d") % co_id);
+        THROW(boost::format("Unexpected. el_id=%d") % el_id);
       Cache<T>* c = it1->second;
 
+      const YoutubeAccess::Accesses* acc = it->second;
+
       // it->second is of tyep vector<T>*
-      for (const auto& item_key: *(it->second)) {
+      for (const auto& item_key: *(acc->ObjIds())) {
         if (c->Get(item_key)) {
           // The item is served (downloaded) from the cache
         } else {
@@ -255,30 +303,29 @@ public:
 
   void _ShowStatPerCache() {
     std::string fmt = "%3d %3d %4d %3d";
-    std::string header = Util::BuildHeader(fmt, "co_id cache_hits cache_misses num_items_in_cache");
+    std::string header = Util::BuildHeader(fmt, "el_id cache_hits cache_misses num_items_in_cache");
     Cons::P(header);
-    for (const auto i: YoutubeAccess::CoAccesses()) {
-      int co_id = i.first;
-      Cache<T>* c = _caches[co_id];
+    for (const auto i: YoutubeAccess::ElAccesses()) {
+      int el_id = i.first;
+      Cache<T>* c = _caches[el_id];
       typename Cache<T>::Stat s = c->GetStat();
-      Cons::P(boost::format(fmt) % co_id % s.hits % s.misses % s.num_items);
+      Cons::P(boost::format(fmt) % el_id % s.hits % s.misses % s.num_items);
     }
   }
+
 
   void _ReportStat(long total_cache_size) {
     long hits = 0;
     long misses = 0;
-    for (const auto i: YoutubeAccess::CoAccesses()) {
-      int co_id = i.first;
-      Cache<T>* c = _caches[co_id];
+    for (const auto i: YoutubeAccess::ElAccesses()) {
+      int el_id = i.first;
+      Cache<T>* c = _caches[el_id];
       typename Cache<T>::Stat s = c->GetStat();
-      //Cons::P(boost::format(fmt) % co_id % s.hits % s.misses % s.num_items);
+      //Cons::P(boost::format(fmt) % el_id % s.hits % s.misses % s.num_items);
       hits += s.hits;
       misses += s.misses;
     }
 
     Cons::P(boost::format("%d %f %d %d") % total_cache_size % (double(hits) / (hits + misses)) % hits % misses);
   }
-
-
 };

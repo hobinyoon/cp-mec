@@ -2,12 +2,12 @@ video_accesses_by_COs: ~/work/cp-mec/misc/gen-video-acc-reqs-at-central-offices/
 
 utility_curves: ~/work/cp-mec-data/utility-curves/youtube-CO.tar.7z
 
-# Skip workloads and utility curves that are over max_co_id (max CO ID) for saving time during dev.
+# Skip workloads and utility curves that are over max_el_id (max edge location ID) for saving time during dev.
 #   Set to -1 for no limit.
 #   22978 is the max for now. The utility curve for 22979 is missing.
-#max_co_id: -1
-max_co_id: 22978
-#max_co_id: 50
+#max_el_id: -1
+max_el_id: 22978
+#max_el_id: 1
 
 # linear or exponential
 cache_size_increment_type: exponential
@@ -19,7 +19,8 @@ convert_utility_curves_to_convex: true
 # uniform, req_volume_based, utility_based
 #placement_stragegy: uniform
 #placement_stragegy: req_volume_based
-placement_stragegy: utility_based
+placement_stragegy: user_based
+#placement_stragegy: utility_based
 
 
 
