@@ -16,6 +16,13 @@ cache_size_increment_type: exponential
 #convert_utility_curves_to_convex: false
 convert_utility_curves_to_convex: true
 
+# uniform, req_volume_based, utility_based
+#placement_stragegy: uniform
+#placement_stragegy: req_volume_based
+placement_stragegy: utility_based
+
+
+
 # Hit ratio of Facebook edge caches
 # - Huang et al. - 2013 - An analysis of Facebook photo caching
 #cache_hit_ratio: 0.58
