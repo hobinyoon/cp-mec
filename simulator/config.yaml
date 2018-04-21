@@ -19,8 +19,8 @@ convert_utility_curves_to_convex: true
 # uniform, req_volume_based, utility_based
 #placement_stragegy: uniform
 #placement_stragegy: req_volume_based
-placement_stragegy: user_based
-#placement_stragegy: utility_based
+#placement_stragegy: user_based
+placement_stragegy: utility_based
 
 
 

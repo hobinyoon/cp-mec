@@ -20,17 +20,30 @@ namespace UtilityCurves {
   namespace bf = boost::filesystem;
 
   // map<filename(EL_id), LRU_utility_curve>
-  map<int, map<long, long>* > _fn_uc;
+  map<int, map<long, long>* > _elid_uc;
 
   // The sum of the max lru cache size from the utility curves.
   //   The value will be the budget upperbound, beyond which won't give you any more benefit.
   long _sum_max_lru_cache_size = 0;
 
-  void _Load(int el_id, const string& dn, map<long, long>* uc);
+  string _fn_condensed;
+
+  void _LoadRaw();
+  void _LoadUcAtEl(int el_id, const string& dn, map<long, long>* uc);
   void _MakeConvex(map<long, long>*& uc, int el_id);
+  bool _LoadCondensed();
+  void _WriteCondensed();
+  void _CalcMisc();
 
 
   void Load() {
+    if (_LoadCondensed())
+      return;
+    _LoadRaw();
+    _WriteCondensed();
+  }
+
+  void _LoadRaw() {
     string fn = Conf::GetFn("utility_curves");
     if (! bf::exists(fn))
       THROW("Unexpected");
@@ -63,47 +76,18 @@ namespace UtilityCurves {
 
       // Utility curve
       map<long, long>* uc = new map<long, long>();
-      _Load(el_id, dn, uc);
+      _LoadUcAtEl(el_id, dn, uc);
       if (boost::algorithm::to_lower_copy(Conf::Get("convert_utility_curves_to_convex")) == "true")
         _MakeConvex(uc, el_id);
-      _fn_uc.emplace(el_id, uc);
+      _elid_uc.emplace(el_id, uc);
     }
-    Cons::P(boost::format("Loaded %d utility curves.") % _fn_uc.size());
+    Cons::P(boost::format("Loaded %d utility curves.") % _elid_uc.size());
 
-    {
-      // This will be the budget upperbound, beyond which won't give you more benefit.
-      _sum_max_lru_cache_size = 0;
-      for (auto i: _fn_uc) {
-        auto uc = i.second;
-        if (uc->size() == 0)
-          continue;
-        _sum_max_lru_cache_size += uc->rbegin()->first;
-      }
-      Cons::P(boost::format("_sum_max_lru_cache_size=%d") % _sum_max_lru_cache_size);
-    }
-
-    // CDF of max LRU cache size
-    if (false) {
-      vector<long> max_cache_sizes;
-      for (auto i: _fn_uc)
-        max_cache_sizes.push_back(i.second->rbegin()->first);
-      string fn_cdf = str(boost::format("%s/cdf-max-lru-cache-size-per-EL-from-utility-curves") % Conf::DnOut());
-      Stat::Gen<long>(max_cache_sizes, fn_cdf);
-    }
-
-    // Print the curves
-    if (false) {
-      for (auto i: _fn_uc) {
-        Cons::P(boost::format("%d") % i.first);
-        for (auto j: *(i.second)) {
-          Cons::P(boost::format("  %ld %ld") % j.first % j.second);
-        }
-      }
-    }
+    _CalcMisc();
   }
 
 
-  void _Load(int el_id, const string& dn, map<long, long>* uc) {
+  void _LoadUcAtEl(int el_id, const string& dn, map<long, long>* uc) {
     string fn = str(boost::format("%s/%d") % dn % el_id);
     //Cons::P(boost::format("%d %s") % el_id % fn);
 
@@ -275,11 +259,111 @@ namespace UtilityCurves {
   }
 
 
+  bool _LoadCondensed() {
+    string fn1 = bf::path(Conf::GetFn("utility_curves")).filename().string();
+    _fn_condensed = str(boost::format("%s/%s") % Conf::DnOut() % fn1.substr(0, fn1.size() - 7));
+    if (! bf::exists(_fn_condensed))
+      return false;
+
+    Cons::MT _(boost::format("Loading condensed utility curves from %s") % _fn_condensed);
+
+    int max_el_id = atoi(Conf::Get("max_el_id").c_str());
+
+    ifstream ifs(_fn_condensed);
+    size_t num_ELs;
+    ifs.read((char*)&num_ELs, sizeof(num_ELs));
+    for (size_t i = 0; i < num_ELs; i ++) {
+      int el_id;
+      ifs.read((char*)&el_id, sizeof(el_id));
+      if (max_el_id != -1 && max_el_id < el_id) {
+        Cons::P(boost::format("Passed max_el_id %d. Stop loading") % max_el_id);
+        break;
+      }
+
+      size_t uc_size;
+      ifs.read((char*)&uc_size, sizeof(uc_size));
+
+      map<long, long>* uc = new map<long, long>();
+      for (size_t j = 0; j < uc_size; j ++) {
+        long cache_size;
+        ifs.read((char*)&cache_size, sizeof(cache_size));
+        long bytes_served;
+        ifs.read((char*)&bytes_served, sizeof(bytes_served));
+        uc->emplace(cache_size, bytes_served);
+      }
+      _elid_uc.emplace(el_id, uc);
+    }
+    Cons::P(boost::format("Loaded %d utility curves.") % _elid_uc.size());
+    _CalcMisc();
+    return true;
+  }
+
+
+  void _WriteCondensed() {
+    Cons::MT _("Writing condensed utility curves");
+    ofstream ofs(_fn_condensed);
+    size_t n = _elid_uc.size();
+    ofs.write((char*)&n, sizeof(n));
+
+    for (auto i: _elid_uc) {
+      int el_id = i.first;
+      ofs.write((char*)&el_id, sizeof(el_id));
+
+      map<long, long>* uc = i.second;
+      size_t n = uc->size();
+      ofs.write((char*)&n, sizeof(n));
+
+      for (auto j: *uc) {
+        long cache_size = j.first;
+        ofs.write((char*)&cache_size, sizeof(cache_size));
+        long bytes_served = j.second;
+        ofs.write((char*)&bytes_served, sizeof(bytes_served));
+      }
+    }
+    ofs.close();
+    Cons::P(boost::format("Created %s %d") % _fn_condensed % boost::filesystem::file_size(_fn_condensed));
+  }
+
+
+  void _CalcMisc() {
+    {
+      // This will be the budget upperbound, beyond which won't give you more benefit.
+      _sum_max_lru_cache_size = 0;
+      for (auto i: _elid_uc) {
+        auto uc = i.second;
+        if (uc->size() == 0)
+          continue;
+        _sum_max_lru_cache_size += uc->rbegin()->first;
+      }
+      Cons::P(boost::format("_sum_max_lru_cache_size=%d") % _sum_max_lru_cache_size);
+    }
+
+    // CDF of max LRU cache size
+    if (false) {
+      vector<long> max_cache_sizes;
+      for (auto i: _elid_uc)
+        max_cache_sizes.push_back(i.second->rbegin()->first);
+      string fn_cdf = str(boost::format("%s/cdf-max-lru-cache-size-per-EL-from-utility-curves") % Conf::DnOut());
+      Stat::Gen<long>(max_cache_sizes, fn_cdf);
+    }
+
+    // Print the curves
+    if (false) {
+      for (auto i: _elid_uc) {
+        Cons::P(boost::format("%d") % i.first);
+        for (auto j: *(i.second)) {
+          Cons::P(boost::format("  %ld %ld") % j.first % j.second);
+        }
+      }
+    }
+  }
+
+
   void FreeMem() {
-    for (auto i: _fn_uc) {
+    for (auto i: _elid_uc) {
       delete i.second;
     }
-    _fn_uc.clear();
+    _elid_uc.clear();
   }
 
 
@@ -289,6 +373,6 @@ namespace UtilityCurves {
 
 
   const map<int, map<long, long>* >& Get() {
-    return _fn_uc;
+    return _elid_uc;
   }
 }
