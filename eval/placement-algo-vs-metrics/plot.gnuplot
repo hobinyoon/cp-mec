@@ -12,16 +12,16 @@ FN_OUT = "placement-algo-vs-metrics.pdf"
 set print "-"
 #print sprintf("MAX_CLUSTER_SIZE=%f", MAX_CLUSTER_SIZE)
 
-LMARGIN=0.23
+#size_x=2.8
+size_x=2.3
+set terminal pdfcairo enhanced size (size_x)in, (size_x*0.80)in
+set output FN_OUT
+
+LMARGIN=0.28
 RMARGIN=0.98
 
 if (1) {
   logscale_x = 1
-
-  size_x=2.8
-  #size_x=3.0
-  set terminal pdfcairo enhanced size (size_x)in, (size_x*0.75)in
-  set output FN_OUT
 
   set lmargin screen LMARGIN
   set rmargin screen RMARGIN
@@ -30,7 +30,7 @@ if (1) {
   #set ytics format "%.2f" tc rgb "black" #autofreq 0,0.01
 
   if (logscale_x) {
-    set xtics nomirror tc rgb "black" ( \
+    set xtics nomirror tc rgb "black" rotate by -90 ( \
       "1GB"         1024, \
       "4"         4*1024, \
       "16"       16*1024, \
@@ -40,7 +40,7 @@ if (1) {
       "4"    4*1024*1024, \
       "16"  16*1024*1024 \
     )
-    set xlabel "Total cache space allocated"
+    set xlabel "Total cache space allocated" offset 0,-0.5
     set key top left
   } else {
     set xtics nomirror tc rgb "black"
@@ -52,7 +52,7 @@ if (1) {
   set grid xtics ytics
   set border back lc rgb "#808080"
 
-  set ylabel "Aggregate cache hit ratio"
+  set ylabel "Aggregate\ncache hit ratio" offset 0.5,0
 
   set yrange [0:]
 
@@ -88,10 +88,10 @@ if (1) {
   #set yrange [0:0.025]
 
   #set ylabel "Improvement of UC-based cache space allocation\nover request volume-based allocation"
-  set ylabel "Improvement of UC\nover REQ (%)" offset -0.5,0
-  set xlabel "Total cache space allocated"
+  set ylabel "Improvement of UC\nover REQ (%)" offset -1,0
+  set xlabel "Total cache space allocated" offset 0,-0.5
 
-  set xtics nomirror tc rgb "black" ( \
+  set xtics nomirror tc rgb "black" rotate by -90 ( \
       "1GB"         1024, \
       "4"         4*1024, \
       "16"       16*1024, \
@@ -124,10 +124,10 @@ if (1) {
   set xrange [1024:32*1024*1024]
   set yrange [0:0.025]
 
-  set ylabel "Improvement of UC over REQ\n(aggregate hit rate)" offset 1,0
-  set xlabel "Total cache space allocated"
+  set ylabel "Improvement of UC\nover REQ (hit rate)" offset 1,0
+  set xlabel "Total cache space allocated" offset 0,-0.5
 
-  set xtics nomirror tc rgb "black" ( \
+  set xtics nomirror tc rgb "black" rotate by -90 ( \
       "1GB"         1024, \
       "4"         4*1024, \
       "16"       16*1024, \
