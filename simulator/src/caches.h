@@ -17,6 +17,7 @@ template <class T>
 class Caches {
   //map<EL(edge_location)_id, EdgeDC<T>* >
   std::map<int, EdgeDC<T>* > _edgedcs;
+  const char* _fmt = "%8d %8.6f %6d %7d %8d %8d";
 
 
   void _FreeMem() {
@@ -38,6 +39,8 @@ public:
 
   // Allocate caches and replay workload
   void Run(long total_cache_size_max) {
+    Cons::P(Util::BuildHeader(_fmt, "total_cache_size hit_ratio hits misses traffic_o2c traffic_c2u"));
+
     std::string inc_type = Conf::Get("cache_size_increment_type");
     if (inc_type == "exponential") {
       long total_cache_size = total_cache_size_max;
@@ -337,7 +340,7 @@ public:
       c2u += s.traffic_c2u;
     }
 
-    Cons::P(boost::format("%d %f %d %d %d %d")
-        % total_cache_size % (double(hits) / (hits + misses)) % hits % misses % o2c % c2u);
+    // 25353550 0.081899 124079 1390937 69546850 75750800
+    Cons::P(boost::format(_fmt) % total_cache_size % (double(hits) / (hits + misses)) % hits % misses % o2c % c2u);
   }
 };
