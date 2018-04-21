@@ -7,6 +7,7 @@
 #include "cache.h"
 #include "conf.h"
 #include "cons.h"
+#include "edge-dc.h"
 #include "util.h"
 #include "youtube-access.h"
 #include "ub-alloc.h"
@@ -14,15 +15,14 @@
 
 template <class T>
 class Caches {
-  //map<cache_id, Cache<T>* >
-  // cache_id is the same as EL_id (edge location ID)
-  std::map<int, Cache<T>* > _caches;
+  //map<EL(edge_location)_id, EdgeDC<T>* >
+  std::map<int, EdgeDC<T>* > _edgedcs;
 
 
   void _FreeMem() {
-    for (auto i: _caches)
+    for (auto i: _edgedcs)
       delete i.second;
-    _caches.clear();
+    _edgedcs.clear();
   }
 
 
@@ -109,10 +109,9 @@ public:
         cache_size = cache_size_1;
 
       //Cons::P(boost::format("%d") % cache_size);
-      Cache<T>* c = new Cache<T>(cache_size);
 
       int el_id = i.first;
-      _caches.emplace(el_id, c);
+      _edgedcs.emplace(el_id, new EdgeDC<T>(cache_size));
     }
   }
 
@@ -156,7 +155,7 @@ public:
     for (auto i: elid_cachesize) {
       int el_id = i.first;
       long cache_size = i.second;
-      _caches.emplace(el_id, new Cache<T>(cache_size));
+      _edgedcs.emplace(el_id, new EdgeDC<T>(cache_size));
     }
   }
 
@@ -200,7 +199,7 @@ public:
     for (auto i: elid_cachesize) {
       int el_id = i.first;
       long cache_size = i.second;
-      _caches.emplace(el_id, new Cache<T>(cache_size));
+      _edgedcs.emplace(el_id, new EdgeDC<T>(cache_size));
     }
   }
 
@@ -214,7 +213,7 @@ public:
     for (auto i: elid_cachesize) {
       int el_id = i.first;
       long cache_size = i.second;
-      _caches.emplace(el_id, new Cache<T>(cache_size));
+      _edgedcs.emplace(el_id, new EdgeDC<T>(cache_size));
     }
   }
 
@@ -277,55 +276,68 @@ public:
       typename std::map<int, YoutubeAccess::Accesses* >::const_iterator it_end) {
     for (auto it = it_begin; it != it_end; it ++) {
       int el_id = it->first;
-      auto it1 = _caches.find(el_id);
-      if (it1 == _caches.end())
+      auto it1 = _edgedcs.find(el_id);
+      if (it1 == _edgedcs.end())
         THROW(boost::format("Unexpected. el_id=%d") % el_id);
-      Cache<T>* c = it1->second;
+      EdgeDC<T>* edc = it1->second;
 
       const YoutubeAccess::Accesses* acc = it->second;
 
       // it->second is of tyep vector<T>*
       for (const auto& item_key: *(acc->ObjIds())) {
-        if (c->Get(item_key)) {
+        // Item size is 50 MB for every video: an wild guess of the average YouTube video size downloaded.
+        const long item_size = 50;
+
+        if (edc->Get(item_key)) {
           // The item is served (downloaded) from the cache
         } else {
           // The item is not in the cache.
-          //   TODO: Simulate fetching from the origin for the latency calculation. You can probably do an aggregate latency calculation.
-          //   Put the item in the cache. For now, we don't care if the Put() succeeds or not (due to a 0-size cache).
-          // Item size is 50 MB for every video: an wild guess of the average YouTube video size downloaded.
-          const long item_size = 50;
-          c->Put(item_key, item_size);
+
+          // Fetch the data item from the origin to the edge cache
+          edc->FetchFromOrigin(item_size);
+
+          // Put the item in the cache.
+          //   The operation can fail when there isn't enough space for the new item even after evicting existing items.
+          //     For example when the cache size is 0.
+          //   We don't do anything about the failed operation for now.
+          edc->Put(item_key, item_size);
         }
+        edc->ServeDataToUser(item_size);
       }
     }
   }
 
 
-  void _ShowStatPerCache() {
-    std::string fmt = "%3d %3d %4d %3d";
-    std::string header = Util::BuildHeader(fmt, "el_id cache_hits cache_misses num_items_in_cache");
-    Cons::P(header);
-    for (const auto i: YoutubeAccess::ElAccesses()) {
-      int el_id = i.first;
-      Cache<T>* c = _caches[el_id];
-      typename Cache<T>::Stat s = c->GetStat();
-      Cons::P(boost::format(fmt) % el_id % s.hits % s.misses % s.num_items);
-    }
-  }
+  //void _ShowStatPerCache() {
+  //  std::string fmt = "%3d %3d %4d %3d";
+  //  std::string header = Util::BuildHeader(fmt, "el_id cache_hits cache_misses num_items_in_cache");
+  //  Cons::P(header);
+  //  for (const auto i: YoutubeAccess::ElAccesses()) {
+  //    int el_id = i.first;
+  //    EdgeDC<T>* edc = _edgedcs[el_id];
+  //    typename EdgeDC<T>::Stat s = edc->GetStat();
+  //    Cons::P(boost::format(fmt) % el_id % s.hits % s.misses % s.num_items);
+  //  }
+  //}
 
 
   void _ReportStat(long total_cache_size) {
     long hits = 0;
     long misses = 0;
+    long o2c = 0;
+    long c2u = 0;
     for (const auto i: YoutubeAccess::ElAccesses()) {
       int el_id = i.first;
-      Cache<T>* c = _caches[el_id];
-      typename Cache<T>::Stat s = c->GetStat();
+      EdgeDC<T>* edc = _edgedcs[el_id];
+      typename EdgeDC<T>::Stat s = edc->GetStat();
       //Cons::P(boost::format(fmt) % el_id % s.hits % s.misses % s.num_items);
-      hits += s.hits;
-      misses += s.misses;
+      hits += s.cache_stat.hits;
+      misses += s.cache_stat.misses;
+      o2c += s.traffic_o2c;
+      c2u += s.traffic_c2u;
     }
 
-    Cons::P(boost::format("%d %f %d %d") % total_cache_size % (double(hits) / (hits + misses)) % hits % misses);
+    Cons::P(boost::format("%d %f %d %d %d %d")
+        % total_cache_size % (double(hits) / (hits + misses)) % hits % misses % o2c % c2u);
   }
 };
