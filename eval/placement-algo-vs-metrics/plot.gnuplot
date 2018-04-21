@@ -2,11 +2,11 @@
 #
 # Tested with gnuplot 4.6 patchlevel 6
 
-FN_UNI = "data-uniform"
-FN_RVB = "data-reqvolbased"
-FN_USR = "data-userbased"
-FN_UB = "data-utilcurvebased"
-FN_UB_RVB = "data-utilcurvebased-reqvolbased"
+FN_UNI = "data/uniform"
+FN_RVB = "data/reqvolbased"
+FN_USR = "data/userbased"
+FN_UB = "data/utilcurvebased"
+FN_UB_RVB = "data/utilcurvebased-reqvolbased"
 FN_OUT = "placement-algo-vs-metrics.pdf"
 
 set print "-"
@@ -146,4 +146,56 @@ if (1) {
 
   plot \
   FN_UB_RVB u 1:($2-$5) w boxes fs transparent solid 0.5 noborder not
+}
+
+
+
+if (1) {
+  reset
+  set lmargin screen LMARGIN
+  set rmargin screen RMARGIN
+
+  set logscale x
+  set xrange [1024:32*1024*1024]
+  set yrange [62:]
+
+  set ylabel "Origin to cache\ndata traffic (TB)" offset 0.5,0
+  set xlabel "Total cache space allocated" offset 0,-0.5
+
+  set xtics nomirror tc rgb "black" rotate by -90 ( \
+      "1GB"         1024, \
+      "4"         4*1024, \
+      "16"       16*1024, \
+      "64"       64*1024, \
+      "256"     256*1024, \
+      "1TB"    1024*1024, \
+      "4"    4*1024*1024, \
+      "16"  16*1024*1024 \
+      )
+  set ytics nomirror tc rgb "black" autofreq 0,2
+  set mytics 2
+  set grid xtics ytics mytics
+  set border back lc rgb "#808080"
+
+  TB(x)=x/1024/1024
+
+  # Stacked bar chart doesn't give you much insights. Their y-values look so similar
+  if (0) {
+    x0(x)=x/1.23
+    x1(x)=x*1.23
+
+    plot \
+    FN_UB u (x0($1)):(TB($6)):(x0($1)):(x1($1)):(TB($6)):(TB($6 + $5)) w boxxyerrorbars fs transparent solid 0.5 noborder t "Origin-Cache", \
+    FN_UB u (x0($1)):(TB($6)):(x0($1)):(x1($1)):(0):(TB($6)) w boxxyerrorbars fs transparent solid 0.5 noborder t "Cache-User"
+    # boxxyerrorbars: x y xlow xhigh ylow yhigh
+  }
+
+  if (1) {
+    set key left bottom
+    plot \
+    FN_UNI u 1:(TB($5)) w lp lw LW pt 4 lc rgb "#8A2BE2" t "UNI", \
+    FN_USR u 1:(TB($5)) w lp lw LW pt 3 lc rgb "#006400" t "USR", \
+    FN_RVB u 1:(TB($5)) w lp lw LW pt 2 lc rgb "blue"    t "REQ", \
+    FN_UB  u 1:(TB($5)) w lp lw LW pt 1 lc rgb "red"     t "UC"
+  }
 }
