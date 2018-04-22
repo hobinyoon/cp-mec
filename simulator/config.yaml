@@ -23,6 +23,8 @@ convert_utility_curves_to_convex: true
 placement_stragegy: utility_based
 
 
+
+
 # The time to get the first byte
 #   TODO: For the video streaming, you will need the time to get 1 MB of data from all pairs.
 #     The delay will be a part of the video loading time and the time when a user jumps to a random location of the video.
@@ -35,20 +37,12 @@ placement_stragegy: utility_based
 #     TODO: pre-calculate the numbers.
 wired_network_rtt_ms_per_km: 0.018038
 
-
-
-# Hit ratio of Facebook edge caches
-# - Huang et al. - 2013 - An analysis of Facebook photo caching
-#cache_hit_ratio: 0.58
-
-
+lat_4g: 60.9475
 # OpenSignal network latencies in the USA. 3G and 4G.
 #   https://opensignal.com/reports/2016/08/usa/state-of-the-mobile-network/
-#
-#   Questions:
-#     What is the 3G:4G ratio?
-#     What do those error bars mean? 25% and 75% percentile?
-#     What exactly did they measure? Time to first byte? How big were the requests?
+#   What is the 3G:4G ratio?
+#   What do those error bars mean? 25% and 75% percentile?
+#   What exactly did they measure? Time to first byte? How big were the requests?
 #
 # mobile_newtwork_speed:
 #   3G:
@@ -66,3 +60,13 @@ wired_network_rtt_ms_per_km: 0.018038
 #       "Sprint":    57.06
 #       "T-Mobile":  61.55
 #       "Verizon":   60.47
+#
+# calc "64.71 + 57.06 + 61.55 + 60.47" = 60.9475
+
+# Average network latency between BS to CO. RTT in ms.
+lat_bs_to_co: 0.05
+
+
+# Hit ratio of Facebook edge caches
+# - Huang et al. - 2013 - An analysis of Facebook photo caching
+#cache_hit_ratio: 0.58

@@ -2,9 +2,8 @@
 
 #include "cache.h"
 
-template <class T>
 class EdgeDC {
-  Cache<T> _cache;
+  Cache<int> _cache;
 
   long _traffic_o2c = 0;
   long _traffic_c2u = 0;
@@ -14,12 +13,12 @@ public:
     : _cache(cache_size)
   {}
 
-  bool Get(const T& item_key) {
+  bool Get(const int& item_key) {
     return _cache.Get(item_key);
   }
 
   // Returns true when the cache item was put in the cache. False otherwise.
-  bool Put(const T& item_key, long item_size) {
+  bool Put(const int& item_key, long item_size) {
     bool r = _cache.Put(item_key, item_size);
     return r;
   }
@@ -32,12 +31,17 @@ public:
     _traffic_c2u += item_size;
   }
 
+  double LatencyToOrigin() {
+    // TODO: implement
+    return 0.0;
+  }
+
   struct Stat {
-    typename Cache<T>::Stat cache_stat;
+    typename Cache<int>::Stat cache_stat;
     long traffic_o2c;
     long traffic_c2u;
 
-    Stat(const typename Cache<T>::Stat cache_stat_, long traffic_o2c_, long traffic_c2u_)
+    Stat(const typename Cache<int>::Stat cache_stat_, long traffic_o2c_, long traffic_c2u_)
       : cache_stat(cache_stat_), traffic_o2c(traffic_o2c_), traffic_c2u(traffic_c2u_)
     {}
   };

@@ -30,6 +30,7 @@ std::ostream& operator<< (std::ostream& os, const CentralOffice& c);
 
 namespace CentralOffices {
   void Load();
+  // TODO: needed?
   CentralOffice* GetNearest(double lat, double lon);
   void FreeMem();
 };
