@@ -19,6 +19,30 @@ using namespace std;
 namespace YoutubeAccess {
   vector<Tweet*> _entries;
 
+  struct Access {
+    Tweet* t;
+    double dist;
+
+    Access(Tweet* t_, double dist_)
+      : t(t_), dist(dist_)
+    {}
+  };
+
+  std::ostream& operator<< (std::ostream& os, const Access& a) {
+    os << boost::format("%s %d") % (*(a.t)) % a.dist;
+    return os;
+  }
+
+  struct cmpCO {
+    bool operator()(const CentralOffice* a, const CentralOffice* b) {
+      return (a->id < b->id);
+    }
+  };
+
+  map<const CentralOffice*, vector<Access*>, cmpCO> _co_accesses;
+  mutex _co_accesses_mutex;
+
+
   const vector<Tweet*>& Entries() {
     return _entries;
   }
@@ -94,64 +118,60 @@ namespace YoutubeAccess {
     _entries.clear();
   }
 
-  struct cmpCO {
-    bool operator()(const CentralOffice* a, const CentralOffice* b) {
-      return (a->id < b->id);
-    }
-  };
+  //void _MapSerial() {
+  //  // Serial processing is not that slow. Takes about 1 min.
+  //  int i = 0;
+  //  size_t e_size = _entries.size();
+  //  for (const auto t: _entries) {
+  //    CentralOffice* co = CentralOffices::GetNearest(t->geo_lati, t->geo_longi);
+  //    if (co == nullptr)
+  //      THROW("Unexpected");
+  //    //Cons::P(boost::format("%s") % *co);
 
-  map<const CentralOffice*, vector<const Tweet*>, cmpCO> _co_accesses;
-  mutex _co_accesses_mutex;
+  //    auto it = _co_accesses.find(co);
+  //    if (it == _co_accesses.end()) {
+  //      vector<const Tweet*> tweets;
+  //      tweets.push_back(t);
+  //      _co_accesses.emplace(co, tweets);
+  //    } else {
+  //      it->second.push_back(t);
+  //    }
 
-  void _MapSerial() {
-    // Serial processing is not that slow. Takes about 1 min.
-    int i = 0;
-    size_t e_size = _entries.size();
-    for (const auto t: _entries) {
-      CentralOffice* co = CentralOffices::GetNearest(t->geo_lati, t->geo_longi);
-      if (co == nullptr)
-        THROW("Unexpected");
-      //Cons::P(boost::format("%s") % *co);
+  //    if (i % 10000 == 0) {
+  //      Cons::ClearLine();
+  //      Cons::Pnnl(boost::format("%.2f%%") % (100.0 * i / e_size));
+  //    }
+  //    i ++;
+  //  }
+  //  Cons::ClearLine();
+  //  Cons::P("100.00%");
 
-      auto it = _co_accesses.find(co);
-      if (it == _co_accesses.end()) {
-        vector<const Tweet*> tweets;
-        tweets.push_back(t);
-        _co_accesses.emplace(co, tweets);
-      } else {
-        it->second.push_back(t);
-      }
-
-      if (i % 10000 == 0) {
-        Cons::ClearLine();
-        Cons::Pnnl(boost::format("%.2f%%") % (100.0 * i / e_size));
-      }
-      i ++;
-    }
-    Cons::ClearLine();
-    Cons::P("100.00%");
-
-    Cons::P(boost::format("mapped %d YouTube accesses to COs") % i);
-  }
+  //  Cons::P(boost::format("mapped %d YouTube accesses to COs") % i);
+  //}
 
   void _MapP0(unsigned int i_begin, unsigned int i_end) {
     try {
-      map<const CentralOffice*, vector<const Tweet*> > co_accesses;
+      map<const CentralOffice*, vector<Access*> > co_accesses;
 
       for (unsigned int i = i_begin; i < i_end; i ++) {
-        const Tweet* t = _entries[i];
+        Tweet* t = _entries[i];
         CentralOffice* co = CentralOffices::GetNearest(t->geo_lati, t->geo_longi);
         if (co == nullptr)
           THROW("Unexpected");
         //Cons::P(boost::format("%s") % *co);
 
+        // Calc the dist between t and co.
+        //   Let's get them all for a start. You might want just an average value or a CDF, but let's not optimize until needed.
+        double dist = Util::ArcInMeters(t->geo_lati, t->geo_longi, co->c.lat, co->c.lon);
+        Access* acc = new Access(t, dist);
+
         auto it = co_accesses.find(co);
         if (it == co_accesses.end()) {
-          vector<const Tweet*> tweets;
-          tweets.push_back(t);
-          co_accesses.emplace(co, tweets);
+          vector<Access*> accesses;
+          accesses.push_back(acc);
+          co_accesses.emplace(co, accesses);
         } else {
-          it->second.push_back(t);
+          it->second.push_back(acc);
         }
       }
 
@@ -161,13 +181,13 @@ namespace YoutubeAccess {
 
         for (auto i: co_accesses) {
           const CentralOffice* co = i.first;
-          vector<const Tweet*>& tweets = i.second;
+          vector<Access*>& accesses = i.second;
 
           auto it = _co_accesses.find(co);
           if (it == _co_accesses.end()) {
-            _co_accesses.emplace(co, tweets);
+            _co_accesses.emplace(co, accesses);
           } else {
-            copy(tweets.begin(), tweets.end(), back_inserter(it->second));
+            copy(accesses.begin(), accesses.end(), back_inserter(it->second));
           }
         }
       }
@@ -203,18 +223,18 @@ namespace YoutubeAccess {
     }
 
     {
-      Cons::MT _("Sorting vector<Tweet*> by their timestamps ...");
+      Cons::MT _("Sorting vector<Access*> by their timestamps ...");
       for (auto& i: _co_accesses) {
-        vector<const Tweet*>& tweets = i.second;
-        //for (auto t: tweets) {
+        vector<Access*>& accesses = i.second;
+        //for (auto t: accesses) {
         //  Cons::P(boost::format("%s") % *t);
         //}
 
-        sort(tweets.begin(), tweets.end(),
-            //[](const Tweet* & a, const Tweet* & b) -> bool
-            [](const Tweet* a, const Tweet* b) -> bool
+        sort(accesses.begin(), accesses.end(),
+            //[](const Access* & a, const Access* & b) -> bool
+            [](const Access* a, const Access* b) -> bool
             {
-              return a->created_at < b->created_at;
+              return a->t->created_at < b->t->created_at;
             });
 
         // Check
@@ -238,10 +258,11 @@ namespace YoutubeAccess {
       string fn = str(boost::format("%s/centraloffice-videoaccesses") % Conf::DnOut());
       ofstream ofs(fn);
       ofs << "# central_office_id latitude longitude num_video_accesses\n";
-      ofs << "#   tweet_id user_id created_at latitude longitude youtube_video_id\n";
+      ofs << "#   tweet_id user_id created_at latitude longitude youtube_video_id dist_to_CO\n";
       ofs << "\n";
       for (auto i: _co_accesses) {
         // Skip one-request COs. Not helpful for comparing the cache placement algorithms.
+        //   You could skip less-than-n-request COs in general. Not sure if I will need it though.
         if (i.second.size() <= 1)
           continue;
 
