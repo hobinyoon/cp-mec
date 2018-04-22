@@ -3,7 +3,7 @@
 #include <iostream>
 #include "conf.h"
 #include "cons.h"
-#include "central-office.h"
+#include "data-source.h"
 #include "util.h"
 #include "utility-curve.h"
 #include "youtube-access.h"
@@ -29,8 +29,9 @@ int main(int argc, char* argv[]) {
 
     // Load YouTube accesses first to avoid loading unnecessary (one-hit per CO) utility curves.
     YoutubeAccess::Load();
-
     UtilityCurves::Load();
+
+    DataSource::Load();
 
     string inc_type = Conf::Get("cache_size_increment_type");
     long aggr_cache_size_max = UtilityCurves::SumMaxLruCacheSize();
@@ -72,6 +73,7 @@ int main(int argc, char* argv[]) {
       Cons::MT _("Freeing memory ...");
       YoutubeAccess::FreeMem();
       UtilityCurves::FreeMem();
+      DataSource::FreeMem();
     }
   } catch (const exception& e) {
     cerr << "Got an exception: " << e.what() << "\n";

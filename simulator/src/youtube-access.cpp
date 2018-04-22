@@ -6,7 +6,6 @@
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 
-#include "central-office.h"
 #include "conf.h"
 #include "cons.h"
 
@@ -88,7 +87,7 @@ namespace YoutubeAccess {
   void _Load(const string& fn) {
     Cons::MT _(boost::format("Loading YouTube video accesses by edge locations from %s ...") % fn);
 
-    int max_el_id = atoi(Conf::Get("max_el_id").c_str());
+    int max_el_id = stoi(Conf::Get("max_el_id"));
 
     ifstream ifs(fn);
     string line;
@@ -104,13 +103,13 @@ namespace YoutubeAccess {
       if (t.size() != 4)
         THROW(boost::format("Unexpected [%s]") % line);
 
-      int el_id = atoi(t[0].c_str());
+      int el_id = stoi(t[0]);
       if (max_el_id != -1 && max_el_id < el_id) {
         Cons::P(boost::format("Passed max_el_id %d. Stop loading") % max_el_id);
         break;
       }
 
-      int num_accesses = atoi(t[3].c_str());
+      int num_accesses = stoi(t[3]);
       if (num_accesses <= 1) {
         THROW(boost::format("Unexpected [%s]") % line);
         continue;
@@ -126,8 +125,8 @@ namespace YoutubeAccess {
         string line2 = line.substr(2);
         vector<string> t;
         boost::split(t, line2, sep, boost::token_compress_on);
-        // tweet_id user_id created_at(date_time) latitude longitude youtube_video_id
-        if (t.size() != 7)
+        // tweet_id user_id created_at latitude longitude youtube_video_id dist_to_CO
+        if (t.size() != 8)
           THROW(boost::format("Unexpected %d [%s]") % t.size() % line2);
 
         user_ids.insert(t[1]);
@@ -181,7 +180,7 @@ namespace YoutubeAccess {
 
     Cons::MT _(boost::format("Loading condensed YouTube video accesses by edge locations from %s ...") % fn1);
 
-    int max_el_id = atoi(Conf::Get("max_el_id").c_str());
+    int max_el_id = stoi(Conf::Get("max_el_id"));
 
     ifstream ifs(fn1);
     size_t num_ELs;

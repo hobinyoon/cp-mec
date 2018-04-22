@@ -36,9 +36,9 @@ namespace Util {
     string s = boost::posix_time::to_simple_string(td);
     boost::split(t, s, sep);
 
-    int h = atoi(t[0].c_str());  // total hours
+    int h = stoi(t[0]);         // total hours
     int year = h / (365 * 24);  // starts with 0
-    h -= (year * (365 * 24));  // remaining hours
+    h -= (year * (365 * 24));   // remaining hours
     const double hours_in_month = 365.0/12*24;
     int month = int(h / hours_in_month);  // starts with 0
     h -= int(month * hours_in_month);
@@ -70,7 +70,7 @@ namespace Util {
       started = true;
     }
 
-    out += str(boost::format("%02d:%s:%02d") % hour % t[1] % atoi(t[2].c_str()));
+    out += str(boost::format("%02d:%s:%02d") % hour % t[1] % stoi(t[2]));
     return out;
   }
 
@@ -330,7 +330,7 @@ namespace Util {
         THROW("Unexpected");
       if (nep != 0)
         nep ++;
-      nep += abs(atoi(m[0].str().c_str() + 1));
+      nep += abs(stoi(m[0].str().c_str() + 1));
       name_end_pos.push_back(nep);
       fmt0 = m.suffix();
     }

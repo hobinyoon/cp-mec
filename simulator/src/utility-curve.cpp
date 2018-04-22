@@ -65,7 +65,7 @@ namespace UtilityCurves {
     // Start with LRU
     //   TODO: think about if you'd need the others too
 
-    int max_el_id = atoi(Conf::Get("max_el_id").c_str());
+    int max_el_id = stoi(Conf::Get("max_el_id"));
 
     for (const auto i: YoutubeAccess::ElAccesses()) {
       int el_id = i.first;
@@ -123,8 +123,8 @@ namespace UtilityCurves {
         if (t.size() != 2)
           THROW(boost::format("Unexpected %s [%s]") % fn % line);
 
-        long cache_size = atol(t[0].c_str());
-        long bytes_hit = atol(t[1].c_str());
+        long cache_size = stol(t[0]);
+        long bytes_hit = stol(t[1]);
 
         if (bytes_hit_prev == bytes_hit) {
           // Skip intermediate points when bytes_hit doesn't change to save space
@@ -267,7 +267,7 @@ namespace UtilityCurves {
 
     Cons::MT _(boost::format("Loading condensed utility curves from %s") % _fn_condensed);
 
-    int max_el_id = atoi(Conf::Get("max_el_id").c_str());
+    int max_el_id = stoi(Conf::Get("max_el_id"));
 
     ifstream ifs(_fn_condensed);
     size_t num_ELs;
