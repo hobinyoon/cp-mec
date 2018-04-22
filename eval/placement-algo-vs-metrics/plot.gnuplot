@@ -13,12 +13,12 @@ set print "-"
 #print sprintf("MAX_CLUSTER_SIZE=%f", MAX_CLUSTER_SIZE)
 
 #size_x=2.8
-size_x=2.3
+size_x=2.4
 set terminal pdfcairo enhanced size (size_x)in, (size_x*0.80)in
 set output FN_OUT
 
 LMARGIN=0.28
-RMARGIN=0.98
+RMARGIN=0.90
 
 if (1) {
   logscale_x = 1
@@ -159,8 +159,9 @@ if (1) {
   set xrange [1024:32*1024*1024]
   set yrange [62:]
 
-  set ylabel "Origin to cache\ndata traffic (TB)" offset 0.5,0
   set xlabel "Total cache space allocated" offset 0,-0.5
+  set ylabel "Origin to cache\ndata transfer (TB)" offset 0.5,0
+  #set y2label "Cost ($)" #offset 0.5,0
 
   set xtics nomirror tc rgb "black" rotate by -90 ( \
       "1GB"         1024, \
@@ -173,8 +174,8 @@ if (1) {
       "16"  16*1024*1024 \
       )
   set ytics nomirror tc rgb "black" autofreq 0,2
-  set mytics 2
-  set grid xtics ytics mytics
+  #set mytics 2
+  set grid xtics ytics #mytics
   set border back lc rgb "#808080"
 
   TB(x)=x/1024/1024
