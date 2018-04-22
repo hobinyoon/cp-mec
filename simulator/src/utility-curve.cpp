@@ -8,10 +8,10 @@
 
 #include "conf.h"
 #include "cons.h"
+#include "edge-dc.h"
 #include "stat.h"
 #include "util.h"
 #include "utility-curve.h"
-#include "youtube-access.h"
 
 using namespace std;
 
@@ -19,7 +19,7 @@ using namespace std;
 namespace UtilityCurves {
   namespace bf = boost::filesystem;
 
-  // map<filename(EL_id), LRU_utility_curve>
+  // map<filename(edc_id), LRU_utility_curve>
   map<int, map<long, long>* > _elid_uc;
 
   // The sum of the max lru cache size from the utility curves.
@@ -29,8 +29,8 @@ namespace UtilityCurves {
   string _fn_condensed;
 
   void _LoadRaw();
-  void _LoadUcAtEl(int el_id, const string& dn, map<long, long>* uc);
-  void _MakeConvex(map<long, long>*& uc, int el_id);
+  void _LoadUcAtEl(int edc_id, const string& dn, map<long, long>* uc);
+  void _MakeConvex(map<long, long>*& uc, int edc_id);
   bool _LoadCondensed();
   void _WriteCondensed();
   void _CalcMisc();
@@ -67,19 +67,19 @@ namespace UtilityCurves {
 
     int max_el_id = stoi(Conf::Get("max_el_id"));
 
-    for (const auto i: YoutubeAccess::ElAccesses()) {
-      int el_id = i.first;
-      if (max_el_id != -1 && max_el_id < el_id) {
+    for (const auto i: EdgeDCs::Get()) {
+      int edc_id = i.first;
+      if (max_el_id != -1 && max_el_id < edc_id) {
         Cons::P(boost::format("Passed max_el_id %d. Stop loading") % max_el_id);
         break;
       }
 
       // Utility curve
       map<long, long>* uc = new map<long, long>();
-      _LoadUcAtEl(el_id, dn, uc);
+      _LoadUcAtEl(edc_id, dn, uc);
       if (boost::algorithm::to_lower_copy(Conf::Get("convert_utility_curves_to_convex")) == "true")
-        _MakeConvex(uc, el_id);
-      _elid_uc.emplace(el_id, uc);
+        _MakeConvex(uc, edc_id);
+      _elid_uc.emplace(edc_id, uc);
     }
     Cons::P(boost::format("Loaded %d utility curves.") % _elid_uc.size());
 
@@ -87,9 +87,9 @@ namespace UtilityCurves {
   }
 
 
-  void _LoadUcAtEl(int el_id, const string& dn, map<long, long>* uc) {
-    string fn = str(boost::format("%s/%d") % dn % el_id);
-    //Cons::P(boost::format("%d %s") % el_id % fn);
+  void _LoadUcAtEl(int edc_id, const string& dn, map<long, long>* uc) {
+    string fn = str(boost::format("%s/%d") % dn % edc_id);
+    //Cons::P(boost::format("%d %s") % edc_id % fn);
 
     if (! bf::exists(fn))
       THROW(boost::format("Unexpected [%s]") % fn);
@@ -153,7 +153,7 @@ namespace UtilityCurves {
 
 
   // Returns the number of points deleted
-  void _MakeConvex(map<long, long>*& uc, int el_id) {
+  void _MakeConvex(map<long, long>*& uc, int edc_id) {
     // x: cache space
     // y: utility (bytes served)
 
@@ -225,7 +225,7 @@ namespace UtilityCurves {
 
     if (0 < num_points_concave) {
       if (false) {
-        Cons::P(boost::format("el_id=%d num_points_deleted=%d num_points_concave=%d") % el_id % num_points_deleted % num_points_concave);
+        Cons::P(boost::format("edc_id=%d num_points_deleted=%d num_points_concave=%d") % edc_id % num_points_deleted % num_points_concave);
         vector<string> s;
         long x_prev = 0;
         long y_prev = 0;
@@ -270,12 +270,12 @@ namespace UtilityCurves {
     int max_el_id = stoi(Conf::Get("max_el_id"));
 
     ifstream ifs(_fn_condensed);
-    size_t num_ELs;
-    ifs.read((char*)&num_ELs, sizeof(num_ELs));
-    for (size_t i = 0; i < num_ELs; i ++) {
-      int el_id;
-      ifs.read((char*)&el_id, sizeof(el_id));
-      if (max_el_id != -1 && max_el_id < el_id) {
+    size_t num_edcs;
+    ifs.read((char*)&num_edcs, sizeof(num_edcs));
+    for (size_t i = 0; i < num_edcs; i ++) {
+      int edc_id;
+      ifs.read((char*)&edc_id, sizeof(edc_id));
+      if (max_el_id != -1 && max_el_id < edc_id) {
         Cons::P(boost::format("Passed max_el_id %d. Stop loading") % max_el_id);
         break;
       }
@@ -291,7 +291,7 @@ namespace UtilityCurves {
         ifs.read((char*)&bytes_served, sizeof(bytes_served));
         uc->emplace(cache_size, bytes_served);
       }
-      _elid_uc.emplace(el_id, uc);
+      _elid_uc.emplace(edc_id, uc);
     }
     Cons::P(boost::format("Loaded %d utility curves.") % _elid_uc.size());
     _CalcMisc();
@@ -306,8 +306,8 @@ namespace UtilityCurves {
     ofs.write((char*)&n, sizeof(n));
 
     for (auto i: _elid_uc) {
-      int el_id = i.first;
-      ofs.write((char*)&el_id, sizeof(el_id));
+      int edc_id = i.first;
+      ofs.write((char*)&edc_id, sizeof(edc_id));
 
       map<long, long>* uc = i.second;
       size_t n = uc->size();

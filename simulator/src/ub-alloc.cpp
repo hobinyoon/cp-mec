@@ -2,7 +2,6 @@
 #include "ub-alloc.h"
 #include "util.h"
 #include "utility-curve.h"
-#include "youtube-access.h"
 
 using namespace std;
 
@@ -64,29 +63,29 @@ namespace UbAlloc {
 
 
   // Calculate cache size at each EL using the utility curves
-  //   elid_cachesize: map<el_id, cache_size_to_allocate_in_MB>
-  void Calc(const long total_cache_size,  map<int, long>& elid_cachesize) {
-    // map<el_id, EL*>
+  //   edcid_cachesize: map<edc_id, cache_size_to_allocate_in_MB>
+  void Calc(const long total_cache_size,  map<int, long>& edcid_cachesize) {
+    // map<edc_id, EL*>
     map<int, EL*> elid_el;
     for (const auto& i: UtilityCurves::Get()) {
-      int el_id = i.first;
+      int edc_id = i.first;
       const auto uc = i.second;
-      elid_el.emplace(el_id, new EL(uc));
-      elid_cachesize.emplace(el_id, 0);
+      elid_el.emplace(edc_id, new EL(uc));
+      edcid_cachesize.emplace(edc_id, 0);
     }
 
-    // Initialize map<next_gain_delta, vector<el_id> >
+    // Initialize map<next_gain_delta, vector<edc_id> >
     map<double, vector<int> > ngd_elids;
     for (auto i: elid_el) {
-      int el_id = i.first;
+      int edc_id = i.first;
       double ngd = i.second->GetNextGainDelta();
-      //Cons::P(boost::format("Init %d %f") % el_id % ngd);
+      //Cons::P(boost::format("Init %d %f") % edc_id % ngd);
       if (ngd == 0.0)
         continue;
       auto it = ngd_elids.find(ngd);
       if (it == ngd_elids.end())
         ngd_elids.emplace(ngd, vector<int>());
-      ngd_elids[ngd].push_back(el_id);
+      ngd_elids[ngd].push_back(edc_id);
     }
 
     // Keep allocating 50 MB of cache space until the total space becomes total_cache_size
@@ -102,15 +101,15 @@ namespace UbAlloc {
       if (el_ids.size() == 0)
         THROW("Unexpected");
 
-      int el_id = el_ids.back();
-      //Cons::P(boost::format("Alloc %d") % el_id);
+      int edc_id = el_ids.back();
+      //Cons::P(boost::format("Alloc %d") % edc_id);
 
-      auto it1 = elid_cachesize.find(el_id);
-      if (it1 == elid_cachesize.end())
+      auto it1 = edcid_cachesize.find(edc_id);
+      if (it1 == edcid_cachesize.end())
         THROW("Unexpected");
       it1->second += 50;
 
-      // Erase the el_id. The amortized cost of erasing at the end is O(1)
+      // Erase the edc_id. The amortized cost of erasing at the end is O(1)
       el_ids.pop_back();
       if (el_ids.size() == 0) {
         // Reverse iterator and base() are off by 1
@@ -119,14 +118,14 @@ namespace UbAlloc {
       }
 
       // Update ngd_elids with the next ngd of the just-deleted EL
-      EL* el = elid_el[el_id];
+      EL* el = elid_el[edc_id];
       double ngd = el->GetNextGainDelta();
-      //Cons::P(boost::format("Alloc %d %d %f") % el_id % it1->second % ngd);
+      //Cons::P(boost::format("Alloc %d %d %f") % edc_id % it1->second % ngd);
       if (ngd != 0.0) {
         auto it2 = ngd_elids.find(ngd);
         if (it2 == ngd_elids.end())
           ngd_elids.emplace(ngd, vector<int>());
-        ngd_elids[ngd].push_back(el_id);
+        ngd_elids[ngd].push_back(edc_id);
       }
     }
 

@@ -1,29 +1,26 @@
+// World includes all dynamic components for replaying a workload on a network infrastructure
+
 #pragma once
 
-#include "edge-dc.h"
-#include "youtube-access.h"
+#include "data-access.h"
 
 class World {
 public:
   World(long aggr_cache_size);
-  ~World();
 
-  void PlayWorkload();
-  void ReportStat(const char* fmt);
+  void PlayWorkload(const char* fmt);
 
 private:
   long _aggr_cache_size;
-  //map<EL(edge_location)_id, EdgeDC* >
-  std::map<int, EdgeDC* > _edgedcs;
 
   void _InitOriginDCs();
-  void _AllocateCaches();
-  void _ReportStat();
-  void _AllocateCachesUniform();
-  void _AllocateCachesReqVolBased();
-  void _AllocateCachesUserBased();
-  void _AllocateCachesUtilityBased();
+  void _AllocCaches();
+  void _ReportStat(const char* fmt);
+  void _AllocCachesUniform();
+  void _AllocCachesReqVolBased();
+  void _AllocCachesUserBased();
+  void _AllocCachesUtilityBased();
   void _PlayWorkload(
-      std::map<int, YoutubeAccess::Accesses* >::const_iterator it_begin,
-      std::map<int, YoutubeAccess::Accesses* >::const_iterator it_end);
+      std::map<int, DAs* >::const_iterator it_begin,
+      std::map<int, DAs* >::const_iterator it_end);
 };

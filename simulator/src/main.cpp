@@ -3,10 +3,11 @@
 #include <iostream>
 #include "conf.h"
 #include "cons.h"
+#include "edc-da-loader.h"
+#include "edge-dc.h"
 #include "data-source.h"
 #include "util.h"
 #include "utility-curve.h"
-#include "youtube-access.h"
 #include "world.h"
 
 using namespace std;
@@ -27,11 +28,12 @@ int main(int argc, char* argv[]) {
 
     // TODO: Add data access latency simulation
 
-    // Load YouTube accesses first to avoid loading unnecessary (one-hit per CO) utility curves.
-    YoutubeAccess::Load();
+    // Load edge DCs before utility curves so that we only load the curves that will be used.
+    EdcDaLoader::Load();
     UtilityCurves::Load();
 
-    DataSource::Load();
+    DataSource::Init();
+    EdgeDCs::MapEdcToDatasource();
 
     string inc_type = Conf::Get("cache_size_increment_type");
     long aggr_cache_size_max = UtilityCurves::SumMaxLruCacheSize();
@@ -42,16 +44,8 @@ int main(int argc, char* argv[]) {
     if (inc_type == "exponential") {
       long aggr_cache_size = aggr_cache_size_max;
       while (true) {
-        // Allocate all EdgeDCs
-        //   TODO: In the constructor each EdgeDC will calculate the distance from itself to the closest origin DC
-
-        // TODO: This can be renamed to EdgeDc
-        //CentralOffices::GetAll();
-
         World w(aggr_cache_size);
-        w.PlayWorkload();
-        // TODO: move it into the above
-        w.ReportStat(fmt);
+        w.PlayWorkload(fmt);
 
         if (aggr_cache_size == 0)
           break;
@@ -62,8 +56,7 @@ int main(int argc, char* argv[]) {
         long aggr_cache_size = aggr_cache_size_max * (i + 1) / 10;
 
         World w(aggr_cache_size);
-        w.PlayWorkload();
-        w.ReportStat(fmt);
+        w.PlayWorkload(fmt);
       }
     } else {
       THROW("Unexpected");
@@ -71,9 +64,10 @@ int main(int argc, char* argv[]) {
 
     {
       Cons::MT _("Freeing memory ...");
-      YoutubeAccess::FreeMem();
       UtilityCurves::FreeMem();
       DataSource::FreeMem();
+      AllDAs::FreeMem();
+      EdgeDCs::FreeMem();
     }
   } catch (const exception& e) {
     cerr << "Got an exception: " << e.what() << "\n";

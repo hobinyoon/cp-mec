@@ -1,40 +1,40 @@
 #pragma once
 
+#include <iostream>
+#include <map>
+#include <vector>
+
 #include "cache.h"
 
 class EdgeDC {
-  Cache<int> _cache;
+  // Immutable
+  int _id;
+  double _lat;
+  double _lon;
 
+  // Mutable by each experiment
+  Cache<int> _cache;
   long _traffic_o2c = 0;
   long _traffic_c2u = 0;
 
 public:
-  EdgeDC(long cache_size)
-    : _cache(cache_size)
-  {}
+  EdgeDC(const std::vector<std::string>& t);
+  EdgeDC(std::ifstream& ifs);
+  void WriteCondensed(std::ofstream& ofs);
 
-  bool Get(const int& item_key) {
-    return _cache.Get(item_key);
-  }
+  int Id();
+  double Lat();
+  double Lon();
 
+  void DeallocCache();
+  void AllocCache(long cache_size);
+
+  bool GetObj(const int& item_key);
   // Returns true when the cache item was put in the cache. False otherwise.
-  bool Put(const int& item_key, long item_size) {
-    bool r = _cache.Put(item_key, item_size);
-    return r;
-  }
-
-  void FetchFromOrigin(long item_size) {
-    _traffic_o2c += item_size;
-  }
-
-  void ServeDataToUser(long item_size) {
-    _traffic_c2u += item_size;
-  }
-
-  double LatencyToOrigin() {
-    // TODO: implement
-    return 0.0;
-  }
+  bool PutObj(const int& item_key, long item_size);
+  void FetchFromOrigin(long item_size);
+  void ServeDataToUser(long item_size);
+  double LatencyToOrigin();
 
   struct Stat {
     typename Cache<int>::Stat cache_stat;
@@ -46,7 +46,19 @@ public:
     {}
   };
 
-  Stat GetStat() {
-    return Stat(_cache.GetStat(), _traffic_o2c, _traffic_c2u);
-  }
+  Stat GetStat();
+};
+
+
+namespace EdgeDCs {
+  EdgeDC* Add(const std::vector<std::string>& t);
+  void Delete(int id);
+  const std::map<int, EdgeDC*>& Get();
+  EdgeDC* Get(int edc_id);
+  size_t NumDCs();
+  void WriteCondensed(const std::string& fn);
+  void LoadCondensed(const std::string& fn);
+  void MapEdcToDatasource();
+  void DeallocCaches();
+  void FreeMem();
 };

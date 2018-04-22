@@ -59,4 +59,4 @@ public:
 
 #define THROW(m) throw _Error((m), __FILE__, __LINE__)
 
-#define TRACE cout << "TRACE: " << basename((char*) (__FILE__)) << " " << __LINE__ << " "
+#define TRACE std::cout << "TRACE: " << basename((char*) (__FILE__)) << " " << __LINE__ << " "

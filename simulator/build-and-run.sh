@@ -24,5 +24,5 @@ popd > /dev/null
 
 printf "\n"
 printf "Running $EXE_NAME ...\n"
-#time valgrind target/$EXE_NAME "$@"
+#time valgrind --leak-check=full target/$EXE_NAME "$@"
 time target/$EXE_NAME "$@"

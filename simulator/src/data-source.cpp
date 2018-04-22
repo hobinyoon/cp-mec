@@ -44,7 +44,15 @@ namespace DataSource {
   bgi::rtree<P3_id, bgi::quadratic<16> > _rtree;
 
 
-  void Load() {
+  void _LoadDsLocs();
+
+
+  void Init() {
+    _LoadDsLocs();
+  }
+
+
+  void _LoadDsLocs() {
     string fn = Conf::GetFn("data_source_locations");
     Cons::MT _(boost::format("Loading data source locations from %s ...") % fn);
 

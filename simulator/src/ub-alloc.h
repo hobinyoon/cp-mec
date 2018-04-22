@@ -5,5 +5,5 @@
 #include <map>
 
 namespace UbAlloc {
-  void Calc(const long total_cache_size,  std::map<int, long>& elid_cachesize);
+  void Calc(const long total_cache_size,  std::map<int, long>& edcid_cachesize);
 };

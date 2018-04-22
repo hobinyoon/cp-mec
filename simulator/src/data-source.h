@@ -18,7 +18,7 @@ namespace DataSource {
   std::ostream& operator<< (std::ostream& os, const Node& c);
 
 
-  void Load();
+  void Init();
   Node* GetNearest(double lat, double lon);
   void FreeMem();
 };

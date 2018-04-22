@@ -10,39 +10,34 @@
 
 template <class T>
 class Cache {
-  // Cache item
-  struct Item {
-    T key;
-    long size;
-    Item(const T& key_, long size_)
-      : key(key_), size(size_)
-    {}
-  };
-
-  // List of cache items. The newest one is at the front; the oldest is at the back. 
-  std::list<Item*> _l;
-  std::map<T, typename std::list<Item*>::iterator > _c;
-
-  long _capacity = 0;
-  long _occupancy = 0;
-
-  // Cache hits and misses
-  long _hits = 0;
-  long _misses = 0;
-
 public:
-  Cache(long c)
-    : _capacity(c)
-  {
-  }
+  Cache()
+  {}
 
 
   ~Cache() {
-    _c.clear();
+    Dealloc();
+  }
 
+
+  void Dealloc() {
     for (auto i: _l)
       delete i;
     _l.clear();
+
+    _c.clear();
+
+    _capacity = 0;
+    _occupancy = 0;
+
+    _hits = 0;
+    _misses = 0;
+  }
+
+
+  void SetCapacity(long c) {
+    Dealloc();
+    _capacity = c;
   }
 
 
@@ -123,4 +118,26 @@ public:
   Stat GetStat() {
     return Stat(_hits, _misses, _c.size());
   }
+
+
+private:
+  // Cache item
+  struct Item {
+    T key;
+    long size;
+    Item(const T& key_, long size_)
+      : key(key_), size(size_)
+    {}
+  };
+
+  // List of cache items. The newest one is at the front; the oldest is at the back.
+  std::list<Item*> _l;
+  std::map<T, typename std::list<Item*>::iterator > _c;
+
+  long _capacity = 0;
+  long _occupancy = 0;
+
+  // Cache hits and misses
+  long _hits = 0;
+  long _misses = 0;
 };
