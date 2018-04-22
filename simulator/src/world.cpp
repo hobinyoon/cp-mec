@@ -7,16 +7,30 @@
 #include "cons.h"
 #include "data-access.h"
 #include "edge-dc.h"
+#include "stat.h"
 #include "ub-alloc.h"
 #include "util.h"
 #include "utility-curve.h"
 #include "world.h"
+
+using namespace std;
 
 
 World::World(long aggr_cache_size) {
   _aggr_cache_size = aggr_cache_size;
   _AllocCaches();
 }
+
+
+struct World::PwParam {
+  std::map<int, DAs* >::const_iterator it_begin;
+  std::map<int, DAs* >::const_iterator it_end;
+  vector<double> latencies;
+
+  PwParam(map<int, DAs* >::const_iterator b, map<int, DAs* >::const_iterator e)
+  : it_begin(b), it_end(e)
+  {}
+};
 
 
 void World::PlayWorkload(const char* fmt) {
@@ -45,24 +59,33 @@ void World::PlayWorkload(const char* fmt) {
   // const std::map<int, DAs* >& Get();
   auto it_begin = AllDAs::Get().begin();
 
+  map<int, PwParam*> tid_param;
+
   int i = 0;
   for (; i < a; i ++) {
     auto it_end = it_begin;
     std::advance(it_end, s0);
-    threads.push_back(std::thread(&World::_PlayWorkload, this, it_begin, it_end));
+    PwParam* p = new PwParam(it_begin, it_end);
+    tid_param.emplace(i, p);
+    threads.push_back(std::thread(&World::_PlayWorkload, this, p));
     it_begin = it_end;
   }
   for (; i < num_threads; i ++) {
     auto it_end = it_begin;
     std::advance(it_end, s1);
-    threads.push_back(std::thread(&World::_PlayWorkload, this, it_begin, it_end));
+    PwParam* p = new PwParam(it_begin, it_end);
+    tid_param.emplace(i, p);
+    threads.push_back(std::thread(&World::_PlayWorkload, this, p));
     it_begin = it_end;
   }
   //Cons::P(boost::format("Running %d threads") % threads.size());
   for (auto& t: threads)
     t.join();
 
-  // You don't need to gather the results here. Each thread updates parts of the EdgeDC instances.
+  for (auto i: tid_param) {
+    vector<double>& l = i.second->latencies;
+    copy(l.begin(), l.end(), back_inserter(_latencies));
+  }
 
   _ReportStat(fmt);
 }
@@ -103,8 +126,10 @@ void World::_ReportStat(const char* fmt) {
     c2u += s.traffic_c2u;
   }
 
+  auto lat = Stat::Gen<double>(_latencies);
+
   // 25353550 0.081899 124079 1390937 69546850 75750800
-  Cons::P(boost::format(fmt) % _aggr_cache_size % (double(hits) / (hits + misses)) % hits % misses % o2c % c2u);
+  Cons::P(boost::format(fmt) % _aggr_cache_size % (double(hits) / (hits + misses)) % hits % misses % o2c % c2u % lat.avg % lat._95p % lat._99p);
 }
 
 
@@ -254,9 +279,7 @@ void World::_AllocCachesUtilityBased() {
 }
 
 
-void World::_PlayWorkload(
-    std::map<int, DAs* >::const_iterator it_begin,
-    std::map<int, DAs* >::const_iterator it_end) {
+void World::_PlayWorkload(PwParam* p) {
   // Data access latency calculation
   //   Wireless
   //     Latency between user to the closest BS: follow the 4G model.
@@ -269,7 +292,7 @@ void World::_PlayWorkload(
   static const double lat_4g = Conf::GetNode("lat_4g").as<double>();
   static const double lat_bs_to_co = Conf::GetNode("lat_bs_to_co").as<double>();
 
-  for (auto it = it_begin; it != it_end; it ++) {
+  for (auto it = p->it_begin; it != p->it_end; it ++) {
     int edc_id = it->first;
     EdgeDC* edc = EdgeDCs::Get(edc_id);
 
@@ -278,16 +301,17 @@ void World::_PlayWorkload(
       // Item size is 50 MB for every video: an wild guess of the average YouTube video size downloaded.
       const long item_size = 50;
       double lat = lat_4g + lat_bs_to_co;
-      // TODO: keep going
 
       if (edc->GetObj(item_key)) {
         // The item is served (downloaded) from the cache
+        //
+        // For the latency calculation, we ignore the server processing time
       } else {
         // The item is not in the cache.
 
         // Fetch the data item from the origin to the edge cache
         edc->FetchFromOrigin(item_size);
-        lat += edc->LatencyToOrigin();
+        lat += edc->LatencyToDatasource();
 
         // Put the item in the cache.
         //   The operation can fail when there isn't enough space for the new item even after evicting existing items.
@@ -296,6 +320,7 @@ void World::_PlayWorkload(
         edc->PutObj(item_key, item_size);
       }
       edc->ServeDataToUser(item_size);
+      p->latencies.push_back(lat);
     }
   }
 }

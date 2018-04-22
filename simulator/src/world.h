@@ -12,6 +12,7 @@ public:
 
 private:
   long _aggr_cache_size;
+  std::vector<double> _latencies;
 
   void _InitOriginDCs();
   void _AllocCaches();
@@ -20,7 +21,7 @@ private:
   void _AllocCachesReqVolBased();
   void _AllocCachesUserBased();
   void _AllocCachesUtilityBased();
-  void _PlayWorkload(
-      std::map<int, DAs* >::const_iterator it_begin,
-      std::map<int, DAs* >::const_iterator it_end);
+
+  struct PwParam;
+  void _PlayWorkload(PwParam* p);
 };

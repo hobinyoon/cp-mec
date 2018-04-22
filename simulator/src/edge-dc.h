@@ -5,12 +5,14 @@
 #include <vector>
 
 #include "cache.h"
+#include "data-source.h"
 
 class EdgeDC {
-  // Immutable
+  // These don't change over experiments (World runs).
   int _id;
   double _lat;
   double _lon;
+  double _lat_to_datasource = 0;
 
   // Mutable by each experiment
   Cache<int> _cache;
@@ -26,6 +28,7 @@ public:
   double Lat();
   double Lon();
 
+  void SetDatasource(DataSource::Node* ds);
   void DeallocCache();
   void AllocCache(long cache_size);
 
@@ -34,7 +37,7 @@ public:
   bool PutObj(const int& item_key, long item_size);
   void FetchFromOrigin(long item_size);
   void ServeDataToUser(long item_size);
-  double LatencyToOrigin();
+  double LatencyToDatasource();
 
   struct Stat {
     typename Cache<int>::Stat cache_stat;

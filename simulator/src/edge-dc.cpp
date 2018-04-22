@@ -48,6 +48,19 @@ double EdgeDC::Lon() {
 }
 
 
+void EdgeDC::SetDatasource(DataSource::Node* ds) {
+  static const double lat_ms_per_km = Conf::GetNode("wired_network_rtt_ms_per_km").as<double>();
+  double dist = Util::ArcInMeters(_lat, _lon, ds->c.lat,  ds->c.lon);
+  _lat_to_datasource = dist / 1000.0 * lat_ms_per_km;
+
+  // TODO: These seem to big. Coast to coast latency is less than 100 ms. Like 80 ms.
+  //
+  // Check out this too
+  //   https://serverfault.com/questions/137348/how-much-network-latency-is-typical-for-east-west-coast-usa
+  //TRACE << _lat_to_datasource << "\n";
+}
+
+
 void EdgeDC::DeallocCache() {
   _cache.Dealloc();
   _traffic_o2c = 0;
@@ -82,9 +95,8 @@ void EdgeDC::ServeDataToUser(long item_size) {
 }
 
 
-double EdgeDC::LatencyToOrigin() {
-  // TODO: implement
-  return 0.0;
+double EdgeDC::LatencyToDatasource() {
+  return _lat_to_datasource;
 }
 
 
@@ -97,8 +109,6 @@ namespace EdgeDCs {
   namespace bf = boost::filesystem;
 
   map<int, EdgeDC*> _id_edc;
-  // Edge DC to a nearest data source node (core data center)
-  map<int, DataSource::Node*> _edcid_dc;
 
 
   EdgeDC* Add(const vector<string>& t) {
@@ -182,11 +192,11 @@ namespace EdgeDCs {
 
   void MapEdcToDatasource() {
     for (auto i: _id_edc) {
-      int edc_id = i.first;
+      //int edc_id = i.first;
       EdgeDC* edc = i.second;
 
       DataSource::Node* n = DataSource::GetNearest(edc->Lat(), edc->Lon());
-      _edcid_dc.emplace(edc_id, n);
+      edc->SetDatasource(n);
     }
   }
 

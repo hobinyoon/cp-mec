@@ -38,8 +38,8 @@ int main(int argc, char* argv[]) {
     string inc_type = Conf::Get("cache_size_increment_type");
     long aggr_cache_size_max = UtilityCurves::SumMaxLruCacheSize();
 
-    const char* fmt = "%8d %8.6f %6d %7d %8d %8d";
-    Cons::P(Util::BuildHeader(fmt, "aggr_cache_size hit_ratio hits misses traffic_o2c traffic_c2u"));
+    const char* fmt = "%8d %8.6f %6d %7d %8d %8d %7.3f %7.3f %7.3f";
+    Cons::P(Util::BuildHeader(fmt, "aggr_cache_size hit_ratio hits misses traffic_o2c traffic_c2u lat_avg lat_95p lat_99p"));
 
     if (inc_type == "exponential") {
       long aggr_cache_size = aggr_cache_size_max;
@@ -54,7 +54,6 @@ int main(int argc, char* argv[]) {
     } else if (inc_type == "linear") {
       for (int i = 0; i < 10; i ++) {
         long aggr_cache_size = aggr_cache_size_max * (i + 1) / 10;
-
         World w(aggr_cache_size);
         w.PlayWorkload(fmt);
       }

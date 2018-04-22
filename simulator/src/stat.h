@@ -62,31 +62,29 @@ namespace Stat {
     r.avg = avg;
     r.sd = sd;
 
-    std::string stat = str(boost::format(
-          "avg %s"
-          "\nsd  %s"
-          "\nmin %s"
-          "\nmax %s"
-          "\nsum %s"
-
-          "\n 1p %s"
-          "\n 5p %s"
-          "\n10p %s"
-          "\n25p %s"
-          "\n50p %s"
-          "\n75p %s"
-          "\n90p %s"
-          "\n95p %s"
-          "\n99p %s")
-        % r.avg % r.sd % r.min % r.max % r.sum
-        % r._1p % r._5p % r._10p % r._25p % r._50p % r._75p % r._90p % r._95p % r._99p
-        );
-    //Cons::P(stat);
-
     if (fn_cdf != std::string()) {
       std::ofstream ofs(fn_cdf);
       if (! ofs.is_open())
         THROW(boost::format("Unable to open file %s") % fn_cdf);
+      std::string stat = str(boost::format(
+            "avg %s"
+            "\nsd  %s"
+            "\nmin %s"
+            "\nmax %s"
+            "\nsum %s"
+
+            "\n 1p %s"
+            "\n 5p %s"
+            "\n10p %s"
+            "\n25p %s"
+            "\n50p %s"
+            "\n75p %s"
+            "\n90p %s"
+            "\n95p %s"
+            "\n99p %s")
+          % r.avg % r.sd % r.min % r.max % r.sum
+          % r._1p % r._5p % r._10p % r._25p % r._50p % r._75p % r._90p % r._95p % r._99p
+          );
       ofs << Util::Prepend("# ", stat);
       for (size_t i = 0; i < v.size(); i ++) {
         if (0 < i && i < (v.size() - 1) && v[i - 1] == v[i] && v[i] == v[i + 1])
@@ -100,4 +98,13 @@ namespace Stat {
 
     return r;
   }
+
 };
+
+
+template <class T>
+std::ostream& operator<< (std::ostream& os, const Stat::Result<T>& r) {
+  os << r.avg << " " << r.sd << " " << r.min << " " << r.max << " " << r.sum
+    << " " << r._1p << " " << r._5p << " " << r._10p << " " << r._25p << " " << r._50p << " " << r._75p << " " << r._90p << " " << r._95p << " " << r._99p;
+  return os;
+}
