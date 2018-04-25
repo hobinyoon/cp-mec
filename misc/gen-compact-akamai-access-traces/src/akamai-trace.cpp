@@ -100,7 +100,7 @@ namespace AkamaiTrace {
           }
         }
         Cons::ClearLine();
-        Cons::P(boost::format("Read %d items") % items.size());
+        //Cons::P(boost::format("Read %d items") % items.size());
 
         Cons::P(boost::format("%d %d items. %d uniq items.") % fid % items.size() % uniq_obj_ids.size());
         if (INT_MAX < uniq_obj_ids.size())
