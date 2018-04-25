@@ -25,6 +25,9 @@ namespace AkamaiTrace {
   void Gen() {
     _in_dn = Conf::Get("dn_access_trace");
 
+    // int should be enough
+    //Cons::P(boost::format("%d %d") % INT_MAX % LONG_MAX);
+
     _GetFileList();
     _GenCompactFiles();
   }
@@ -47,10 +50,10 @@ namespace AkamaiTrace {
   }
 
   struct Item {
-    long ts;
-    long obj_id;
+    int ts;
+    int obj_id;
 
-    Item(long ts_, long obj_id_)
+    Item(int ts_, int obj_id_)
       : ts(ts_), obj_id(obj_id_)
     {}
 
@@ -72,7 +75,7 @@ namespace AkamaiTrace {
         Cons::MT _(boost::format("Reading %d %.1fMB") % fid % (boost::filesystem::file_size(in_fn) / 1024.0 / 1024));
 
         set<string> uniq_obj_ids;
-        map<string, long> strid_intid;
+        map<string, int> strid_intid;
         ifstream ifs(in_fn);
         for (string line; getline(ifs, line); ) {
           static const auto sep = boost::is_any_of("\t");
@@ -81,7 +84,7 @@ namespace AkamaiTrace {
           if (t.size() != 7)
             THROW(boost::format("Unexpected: [%s]") % line);
           // 1475531422	66.81.109.120	1091	1740	ff430ce4de44677458914d41c2c25776d4c35ce8898bbd9fff8d32272eb470d4	200	0
-          long ts = stol(t[0]);
+          int ts = stoi(t[0]);
           const string& obj_id = t[4];
 
           auto it = uniq_obj_ids.find(obj_id);
@@ -100,6 +103,8 @@ namespace AkamaiTrace {
         Cons::P(boost::format("Read %d items") % items.size());
 
         Cons::P(boost::format("%d %d items. %d uniq items.") % fid % items.size() % uniq_obj_ids.size());
+        if (INT_MAX < uniq_obj_ids.size())
+          THROW(boost::format("Unexpected: %d") % uniq_obj_ids.size());
       }
 
       {
