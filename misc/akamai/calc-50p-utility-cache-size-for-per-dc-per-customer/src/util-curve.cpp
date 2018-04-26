@@ -32,7 +32,9 @@ namespace UtilCurve {
   };
 
   // <customer_dc, cache_size>
+  //   cache_size is the cache size that gives you half of the cache hits (utility)
   map<CDC, long> _cdc_cs;
+
   set<int> _customers;
   string _in_dn;
 
@@ -79,6 +81,7 @@ namespace UtilCurve {
 
       //Cons::P(p.filename().string());
       _customers.insert(stoi(p.filename().string()));
+      break;
     }
     //Cons::P(boost::format("Found %d customers") % _customers.size());
   }
@@ -167,17 +170,32 @@ namespace UtilCurve {
   }
 
 
+  struct CsUtil {
+    long cache_size;
+    long bytes_hit;
+    CsUtil(long c, long b)
+      : cache_size(c), bytes_hit(b)
+    {}
+  };
+
+  size_t _FindCacheSizeWithHit(const vector<CsUtil>& cs_util, long target_bytes_hit, size_t l, size_t r);
+
+
   void _UcMaxCacheSize(Param* p) {
     for (auto it = p->it_begin; it != p->it_end; it ++) {
       int c_id = it->first.c;
       int dc_id = it->first.dc;
 
+      // Calculate the cache size that gives you the half of the maximum utility
       string fn = str(boost::format("%s/%d/%d") % _in_dn % c_id % dc_id);
       ifstream ifs(fn);
       string line;
       int parse_state = 0;  // 0: uninitialized, 1: LRU, 2: LFU, 3: Optimal
       long bytes_hit_prev = 0;
-      long max_cache_size = 0;
+      //long max_cache_size = 0;
+      long max_bytes_hit = 0;
+      vector<CsUtil> cs_util;
+
       while (getline(ifs, line)) {
         if (line.size() == 0)
           continue;
@@ -207,7 +225,9 @@ namespace UtilCurve {
 
           if (bytes_hit_prev == bytes_hit) {
           } else if (bytes_hit_prev < bytes_hit) {
-            max_cache_size = cache_size;
+            //max_cache_size = cache_size;
+            max_bytes_hit = bytes_hit;
+            cs_util.push_back(CsUtil(cache_size, bytes_hit));
           } else {
             THROW("Unexpected");
           }
@@ -217,16 +237,53 @@ namespace UtilCurve {
           break;
         }
       }
+      //Cons::P(boost::format("max_bytes_hit=%d") % max_bytes_hit);
 
-      it->second = max_cache_size;
+      if (cs_util.size() == 0) {
+        it->second = 0;
+      } else {
+        size_t idx = _FindCacheSizeWithHit(cs_util, max_bytes_hit / 2, 0, cs_util.size());
+        //Cons::P(boost::format("idx=%d cache_size=%d max_bytes_hit=%d") % idx % cs_util[idx].cache_size % cs_util[idx].bytes_hit);
+        it->second = cs_util[idx].cache_size;
+      }
+
       // A quick implementation. I know it's not a good design.
       {
         lock_guard<mutex> _(_cout_lock);
         _num_files_completed ++;
         Cons::ClearLine();
-        Cons::Pnnl(boost::format("%d/%d files completed. max_cache_size=%d")
-            % _num_files_completed % _cdc_cs.size() % max_cache_size);
+        Cons::Pnnl(boost::format("%d/%d files completed. halfhit_cachesize=%d")
+            % _num_files_completed % _cdc_cs.size() % it->second);
       }
+    }
+  }
+
+
+  // Returns the index of cs_util
+  //   Range in [l, r)
+  size_t _FindCacheSizeWithHit(const vector<CsUtil>& cs_util, long target_bytes_hit, size_t l, size_t r) {
+    // Do a binary search
+    //Cons::P(boost::format("l=%d r=%d") % l % r);
+
+    if (l == r) {
+      return l;
+    }
+
+    size_t m = (l + r) / 2;
+    if (l == m) {
+      return l;
+    }
+
+    if (m == r)
+      THROW(boost::format("Unexpected %d") % l);
+
+    long bytes_hit = cs_util[m].bytes_hit;
+    if (bytes_hit == target_bytes_hit) {
+      return m;
+    } else if (bytes_hit < target_bytes_hit) {
+      return _FindCacheSizeWithHit(cs_util, target_bytes_hit, m, r);
+    } else {
+      return _FindCacheSizeWithHit(cs_util, target_bytes_hit, l, m);
     }
   }
 
@@ -240,9 +297,10 @@ namespace UtilCurve {
     for (auto& i: _cdc_cs) {
       int c_id = i.first.c;
       int dc_id = i.first.dc;
-      long cache_size = (i.second) / 2;
+      long cache_size = i.second;
       ofs << boost::format("%d %d %d\n") % c_id % dc_id % cache_size;
     }
+    ofs.close();
 
     Cons::P(boost::format("Created %s %d") % fn % boost::filesystem::file_size(fn));
   }
