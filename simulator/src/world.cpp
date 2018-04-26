@@ -85,6 +85,7 @@ void World::PlayWorkload(const char* fmt) {
   for (auto i: tid_param) {
     vector<double>& l = i.second->latencies;
     copy(l.begin(), l.end(), back_inserter(_latencies));
+    delete i.second;
   }
 
   _ReportStat(fmt);
